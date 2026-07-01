@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title></title>
+<title>Studio Karat — Buchhaltung</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -94,7 +94,8 @@ button.btn{
 }
 button.btn:hover{opacity:.88;}
 button.btn.ghost{background:var(--surface2); color:var(--text);}
-button.btn.danger{background:transparent; color:var(--red); height:auto; padding:5px 10px; font-size:12px;}
+button.btn.danger{background:var(--red); color:#fff; height:var(--field-h); padding:0 18px; font-size:13px; font-weight:600;}
+button.btn.danger.small{background:transparent; color:var(--red); height:auto; padding:6px 12px; font-size:12px;}
 button.btn.small{height:auto; padding:6px 12px; font-size:12px;}
 button.btn:disabled{opacity:.5; cursor:wait;}
 
@@ -153,7 +154,7 @@ const ACCOUNTS = ["Vereinskonto","PayPal","Barkasse"];
 const ACCOUNT_LABELS = { Vereinskonto:"Bankkonto", PayPal:"PayPal", Barkasse:"Barkasse" };
 const KATEGORIEN = ["Verbrauch","Kauf","Leihe","Anschaffung","Geschenk"];
 function accLabel(a){ return ACCOUNT_LABELS[a] || a; }
-const DEFAULT_MEMBERS = ["Mitglied 1","Mitglied 2","Mitglied 3","Mitglied 4","Mitglied 5","Mitglied 6","Mitglied 7","Mitglied 8","Mitglied 9","Mitglied 10"];
+const DEFAULT_MEMBERS = ["Julia","Gervas","Basti","Mitglied 4","Mitglied 5","Mitglied 6","Mitglied 7","Mitglied 8","Mitglied 9","Mitglied 10"];
 
 // ============ Auth ============
 let accessToken = null;
@@ -570,26 +571,22 @@ function renderProjekte(){
           <div class="field"><label>Titel</label><input type="text" class="wide" id="p-name" value="${escAttr(p.name)}"></div>
           <div class="field"><label>Projektträger</label><input type="text" class="wide" id="p-traeger" value="${escAttr(p.traeger)}"></div>
         </div>
-        <div class="grid cols-2" style="margin-top:12px;">
-          <div class="field"><label>Kürzel (für Belegnamen)</label><input type="text" id="p-kuerzel" value="${escAttr(p.kuerzel||'')}" style="width:120px; text-transform:uppercase;"></div>
-          <div class="field"><label>Budget (€)</label><input type="number" step="0.01" class="num-in" id="p-budget" value="${p.budget||0}"></div>
-        </div>
+        <div class="field" style="margin-top:12px;"><label>Kürzel (für Belegnamen)</label><input type="text" id="p-kuerzel" value="${escAttr(p.kuerzel||'')}" style="width:120px; text-transform:uppercase;"></div>
         <div class="row-form">
           <button class="btn ghost" id="p-save-meta">Angaben speichern</button>
           <button class="btn danger" id="p-delete" style="margin-left:auto;">Projekt löschen</button>
         </div>
-        <div class="grid cols-3" style="margin-top:18px;">
+      </div>
+      <div class="card">
+        <div class="grid cols-3">
           <div class="kpi"><div class="label">Einnahmen</div><div class="value pos">${eur(pEinnahmen(p))}</div></div>
           <div class="kpi"><div class="label">Ausgaben</div><div class="value neg">${eur(pAusgaben(p))}</div></div>
           <div class="kpi"><div class="label">Restbudget</div><div class="value ${pDifferenz(p)>=0?'pos':'neg'}">${eur(pDifferenz(p))}</div></div>
         </div>
-        <h3>Buchungen</h3>
-        <div class="hint">Bei „Erstattet über" wählst du aus, von welchem Konto die Rückzahlung an die Person kam – das zieht den Betrag automatisch in der Kontenübersicht von diesem Konto ab.</div>
-        <table><thead><tr><th>Datum</th><th>Ausgabe</th><th>Preis</th><th>Kategorie</th><th>Bezahlt von</th><th>Zahlweg</th><th>Beleg</th><th>Erstattet über</th><th></th></tr></thead>
-        <tbody>${entryRows || '<tr><td colspan="9" class="empty">Noch keine Buchungen.</td></tr>'}</tbody></table>
         ${(()=>{
           const editing = editingEntryId ? (p.entries||[]).find(e=>e.id===editingEntryId) : null;
           return `
+        <h3>${editing?'Ausgabe bearbeiten':'Ausgabe hinzufügen'}</h3>
         <div class="row-form" id="entry-form">
           <div class="field"><label>Datum</label><input type="date" id="e-datum" value="${editing?esc(editing.datum||''):''}"></div>
           <div class="field"><label>Ausgabe</label><input type="text" class="wide" id="e-ausgabe" placeholder="z.B. Getränke" value="${editing?escAttr(editing.ausgabe||''):''}"></div>
@@ -605,7 +602,13 @@ function renderProjekte(){
           ${editing?'<button class="btn ghost" id="e-cancel">Abbrechen</button>':''}
         </div>`;
         })()}
-        <div class="grid cols-2" style="margin-top:18px;">
+        <h3>Ausgaben</h3>
+        <div class="hint">Bei „Erstattet über" wählst du aus, von welchem Konto die Rückzahlung an die Person kam – das zieht den Betrag automatisch in der Kontenübersicht von diesem Konto ab.</div>
+        <table><thead><tr><th>Datum</th><th>Ausgabe</th><th>Preis</th><th>Kategorie</th><th>Bezahlt von</th><th>Zahlweg</th><th>Beleg</th><th>Erstattet über</th><th></th></tr></thead>
+        <tbody>${entryRows || '<tr><td colspan="9" class="empty">Noch keine Buchungen.</td></tr>'}</tbody></table>
+      </div>
+      <div class="card">
+        <div class="grid cols-2">
           <div><h3>Nach Konto (Ausgaben)</h3><table><thead><tr><th>Konto</th><th>Ausgaben</th></tr></thead><tbody>${kontoRows}</tbody></table></div>
           <div><h3>Nach Person (privat ausgelegt)</h3><table><thead><tr><th>Person</th><th>Ausgelegt</th></tr></thead><tbody>${personRows}</tbody></table></div>
         </div>
@@ -617,12 +620,12 @@ function renderProjekte(){
       <div class="proj-list">${chips}</div>
       <h3>Neues Projekt</h3>
       <div class="row-form">
-        <div class="field"><label>Titel</label><input type="text" class="wide" id="new-proj-name" placeholder="Projekttitel"></div>
-        <div class="field"><label>Kürzel</label><input type="text" id="new-proj-kuerzel" placeholder="z.B. HHF" style="width:100px; text-transform:uppercase;"></div>
-        <div class="field"><label>Projektträger</label><input type="text" id="new-proj-traeger" value="Studio Karat" style="width:160px;"></div>
+        <div class="field"><label>Titel *</label><input type="text" class="wide" id="new-proj-name" placeholder="Projekttitel"></div>
+        <div class="field"><label>Kürzel *</label><input type="text" id="new-proj-kuerzel" placeholder="z.B. HHF" style="width:100px; text-transform:uppercase;"></div>
+        <div class="field"><label>Projektträger *</label><input type="text" id="new-proj-traeger" value="Studio Karat" style="width:160px;"></div>
         <div class="field"><label>Budget (€)</label><input type="number" step="0.01" class="num-in" id="new-proj-budget" value="0"></div>
         <div class="field"><label>Einnahmen Bar (€)</label><input type="number" step="0.01" class="num-in" id="new-proj-bar" value="0"></div>
-        <div class="field"><label>Einnahmen Shop/PayPal (€)</label><input type="number" step="0.01" class="num-in" id="new-proj-shop" value="0"></div>
+        <div class="field"><label>Einnahmen PayPal (€)</label><input type="number" step="0.01" class="num-in" id="new-proj-shop" value="0"></div>
         <button class="btn" id="new-proj-add">+ Projekt anlegen</button>
       </div>
     </div>
@@ -703,13 +706,13 @@ function bindEvents(){
   if(newProjBtn) newProjBtn.onclick = async ()=>{
     const name = document.getElementById('new-proj-name').value.trim();
     const kuerzel = document.getElementById('new-proj-kuerzel').value.trim().toUpperCase();
-    const traeger = document.getElementById('new-proj-traeger').value.trim() || 'Studio Karat';
+    const traeger = document.getElementById('new-proj-traeger').value.trim();
     const budget = num(document.getElementById('new-proj-budget').value);
     const einnahmenBar = num(document.getElementById('new-proj-bar').value);
     const einnahmenShop = num(document.getElementById('new-proj-shop').value);
-    if(!name) return;
+    if(!name || !kuerzel || !traeger){ showToast('Titel, Kürzel und Projektträger sind Pflichtfelder'); return; }
     await withBusy('Speichert…', async ()=>{
-      await appendRow('Projekte', {id:uid(), name, kuerzel: kuerzel || 'ALLG', traeger, budget, einnahmenBar, einnahmenShop});
+      await appendRow('Projekte', {id:uid(), name, kuerzel, traeger, budget, einnahmenBar, einnahmenShop});
       await refresh();
     });
     renderContent();
@@ -722,7 +725,7 @@ function bindEvents(){
       name: document.getElementById('p-name').value.trim(),
       kuerzel: document.getElementById('p-kuerzel').value.trim().toUpperCase() || 'ALLG',
       traeger: document.getElementById('p-traeger').value.trim(),
-      budget: num(document.getElementById('p-budget').value),
+      budget: p.budget || 0,
       einnahmenBar: p.einnahmenBar || 0,
       einnahmenShop: p.einnahmenShop || 0,
     };
