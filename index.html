@@ -145,7 +145,7 @@ let CONFIG = JSON.parse(localStorage.getItem('karat_config') || 'null');
 const SHEET_DEFS = {
   Projekte:     ['id','name','traeger','budget','einnahmenBar','einnahmenShop'],
   Buchungen:    ['id','projektId','datum','ausgabe','preis','kategorie','bezahltVon','zahlweg','belegnr','erstattet','erstattetVia'],
-  Vereinskonto: ['id','datum','kategorie','beschreibung','betrag','typ','konto'],
+  Vereinskonto: ['id','datum','kategorie','beschreibung','betrag','typ','konto','quelleBuchungId'],
   Konten:       ['konto','anfang','tatsaechlich'],
   Mitglieder:   ['name'],
 };
@@ -346,7 +346,6 @@ function pDifferenz(p){ return pEinnahmen(p)-pAusgaben(p); }
 function pByKonto(p, konto){ return (p.entries||[]).filter(e=>e.bezahltVon==='ausgeglichen' && e.zahlweg===konto).reduce((s,e)=>s+num(e.preis),0); }
 function pByPerson(p, member){ return (p.entries||[]).filter(e=>e.bezahltVon===member).reduce((s,e)=>s+num(e.preis),0); }
 function pByPersonOffen(p, member){ return (p.entries||[]).filter(e=>e.bezahltVon===member && !truthy(e.erstattet)).reduce((s,e)=>s+num(e.preis),0); }
-function pReimbursedByAccount(p, konto){ return (p.entries||[]).filter(e=>e.bezahltVon!=='ausgeglichen' && truthy(e.erstattet) && e.erstattetVia===konto).reduce((s,e)=>s+num(e.preis),0); }
 
 function vkFiltered(konto){ return state.vereinskonto.filter(e => (e.konto || 'Vereinskonto') === konto); }
 function vkEinnahmenKonto(konto){ return vkFiltered(konto).filter(e=>e.typ==='Einnahme').reduce((s,e)=>s+num(e.betrag),0); }
@@ -361,7 +360,6 @@ function kontoStand(konto){
   if(konto==='Barkasse'){ zugang = projects.reduce((s,p)=>s+num(p.einnahmenBar),0) + vkEinnahmenKonto('Barkasse'); abgang = projects.reduce((s,p)=>s+pByKonto(p,'Barkasse'),0) + vkAusgabenKonto('Barkasse'); }
   else if(konto==='PayPal'){ zugang = projects.reduce((s,p)=>s+num(p.einnahmenShop),0) + vkEinnahmenKonto('PayPal'); abgang = projects.reduce((s,p)=>s+pByKonto(p,'PayPal'),0) + vkAusgabenKonto('PayPal'); }
   else if(konto==='Vereinskonto'){ zugang = vkEinnahmenKonto('Vereinskonto'); abgang = vkAusgabenKonto('Vereinskonto') + projects.reduce((s,p)=>s+pByKonto(p,'Vereinskonto'),0); }
-  abgang += projects.reduce((s,p)=>s+pReimbursedByAccount(p,konto),0);
   const endbestand = num(settings.anfang)+zugang-abgang;
   return {anfang:num(settings.anfang), zugang, abgang, endbestand, tatsaechlich:num(settings.tatsaechlich)};
 }
@@ -534,7 +532,7 @@ function renderProjekte(){
 
 function renderKontobewegungen(){
   const rows = state.vereinskonto.map(e=>`
-    <tr><td>${esc(e.datum||'')}</td><td>${accLabel(e.konto||'Vereinskonto')}</td><td>${esc(e.kategorie||'')}</td><td>${esc(e.beschreibung||'')}</td>
+    <tr><td>${esc(e.datum||'')}</td><td>${accLabel(e.konto||'Vereinskonto')}</td><td>${esc(e.kategorie||'')}${e.quelleBuchungId?' <span class="badge person" style="margin-left:4px;">automatisch</span>':''}</td><td>${esc(e.beschreibung||'')}</td>
       <td class="num ${e.typ==='Einnahme'?'pos':'neg'}">${eur(e.betrag)}</td><td>${e.typ}</td>
       <td><button class="btn danger small" data-del-vk="${e.id}">×</button></td></tr>`).join('');
   return `
@@ -648,8 +646,11 @@ function bindEvents(){
     if(!confirm('Projekt wirklich löschen?')) return;
     const p = state.projectsById[activeProjectId];
     const entryRows = (p.entries||[]).map(e=>e.__row);
+    const entryIds = (p.entries||[]).map(e=>e.id);
+    const linkedVkRows = state.vereinskonto.filter(v=>entryIds.includes(v.quelleBuchungId)).map(v=>v.__row);
     await withBusy('Löscht…', async ()=>{
       await deleteRows('Buchungen', entryRows);
+      await deleteRows('Vereinskonto', linkedVkRows);
       await deleteRows('Projekte', [p.__row]);
       await refresh();
     });
@@ -678,15 +679,40 @@ function bindEvents(){
   document.querySelectorAll('[data-del-entry]').forEach(el=>el.onclick=async()=>{
     const p = state.projectsById[activeProjectId];
     const entry = (p.entries||[]).find(e=>e.id===el.dataset.delEntry);
-    await withBusy('Löscht…', async ()=>{ await deleteRows('Buchungen', [entry.__row]); await refresh(); });
+    const linked = state.vereinskonto.find(v=>v.quelleBuchungId===entry.id);
+    await withBusy('Löscht…', async ()=>{
+      await deleteRows('Buchungen', [entry.__row]);
+      if(linked) await deleteRows('Vereinskonto', [linked.__row]);
+      await refresh();
+    });
     renderContent();
   });
   document.querySelectorAll('[data-entry-erstattet]').forEach(el=>el.onchange=async()=>{
     const p = state.projectsById[activeProjectId];
     const entry = (p.entries||[]).find(e=>e.id===el.dataset.entryErstattet);
     const konto = el.value;
-    const updated = Object.assign({}, entry, { erstattet: !!konto, erstattetVia: konto });
-    await withBusy('Speichert…', async ()=>{ await updateRow('Buchungen', entry.__row, updated); await refresh(); });
+    const linked = state.vereinskonto.find(v=>v.quelleBuchungId===entry.id);
+    await withBusy('Speichert…', async ()=>{
+      if(konto){
+        const vkEntry = {
+          id: linked ? linked.id : uid(),
+          datum: new Date().toISOString().slice(0,10),
+          konto,
+          kategorie: 'Erstattung',
+          beschreibung: `Erstattung an ${entry.bezahltVon} – ${p.name} (${entry.ausgabe})`,
+          betrag: entry.preis,
+          typ: 'Ausgabe',
+          quelleBuchungId: entry.id,
+        };
+        if(linked){ await updateRow('Vereinskonto', linked.__row, vkEntry); }
+        else { await appendRow('Vereinskonto', vkEntry); }
+      } else if(linked){
+        await deleteRows('Vereinskonto', [linked.__row]);
+      }
+      const updated = Object.assign({}, entry, { erstattet: !!konto, erstattetVia: konto });
+      await updateRow('Buchungen', entry.__row, updated);
+      await refresh();
+    });
     renderContent();
   });
 
@@ -708,7 +734,16 @@ function bindEvents(){
   };
   document.querySelectorAll('[data-del-vk]').forEach(el=>el.onclick=async()=>{
     const entry = state.vereinskonto.find(e=>e.id===el.dataset.delVk);
-    await withBusy('Löscht…', async ()=>{ await deleteRows('Vereinskonto', [entry.__row]); await refresh(); });
+    await withBusy('Löscht…', async ()=>{
+      await deleteRows('Vereinskonto', [entry.__row]);
+      if(entry.quelleBuchungId){
+        for(const proj of Object.values(state.projectsById)){
+          const src = (proj.entries||[]).find(e=>e.id===entry.quelleBuchungId);
+          if(src){ await updateRow('Buchungen', src.__row, Object.assign({}, src, { erstattet:false, erstattetVia:'' })); break; }
+        }
+      }
+      await refresh();
+    });
     renderContent();
   });
 
