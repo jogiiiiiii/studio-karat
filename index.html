@@ -143,9 +143,9 @@ let CONFIG = JSON.parse(localStorage.getItem('karat_config') || 'null');
 
 // ============ Sheet-Struktur ============
 const SHEET_DEFS = {
-  Projekte:     ['id','name','traeger','budget','einnahmenBar','einnahmenShop'],
-  Buchungen:    ['id','projektId','datum','ausgabe','preis','kategorie','bezahltVon','zahlweg','belegnr','erstattet','erstattetVia'],
-  Vereinskonto: ['id','datum','kategorie','beschreibung','betrag','typ','konto','quelleBuchungId'],
+  Projekte:     ['id','name','kuerzel','traeger','budget','einnahmenBar','einnahmenShop'],
+  Buchungen:    ['id','projektId','datum','ausgabe','preis','kategorie','bezahltVon','zahlweg','belegnr','erstattet','erstattetVia','belegUrl'],
+  Vereinskonto: ['id','datum','kategorie','beschreibung','betrag','typ','konto','quelleBuchungId','belegnr','belegUrl'],
   Konten:       ['konto','anfang','tatsaechlich'],
   Mitglieder:   ['name'],
 };
@@ -163,7 +163,7 @@ let userInfo = null;
 function initGis(){
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CONFIG.clientId,
-    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
     callback: async (resp) => {
       if(resp.error){ showToast('Anmeldung fehlgeschlagen: '+resp.error); return; }
       accessToken = resp.access_token;
@@ -293,6 +293,73 @@ async function clearAndWrite(name, rowsOfValues){
   }
 }
 
+// ============ Google Drive: Belege ablegen ============
+const DRIVE_FILES_API = 'https://www.googleapis.com/drive/v3/files';
+const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files';
+let folderCache = {};
+
+async function findOrCreateFolder(name, parentId){
+  const cacheKey = parentId + '/' + name;
+  if(folderCache[cacheKey]) return folderCache[cacheKey];
+  const safeName = name.replace(/'/g, "\\'");
+  const q = encodeURIComponent(`'${parentId}' in parents and name='${safeName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const list = await apiFetch(`${DRIVE_FILES_API}?q=${q}&fields=files(id,name)`);
+  if(list.files && list.files.length){ folderCache[cacheKey] = list.files[0].id; return list.files[0].id; }
+  const created = await apiFetch(DRIVE_FILES_API, 'POST', { name, mimeType:'application/vnd.google-apps.folder', parents:[parentId] });
+  folderCache[cacheKey] = created.id;
+  return created.id;
+}
+
+async function resolveBelegFolder(typ, datumStr){
+  const year = (datumStr || '').slice(0,4) || String(new Date().getFullYear());
+  const alleRechnungen = await findOrCreateFolder('Alle Rechnungen', CONFIG.financeFolderId);
+  const yearFolder = await findOrCreateFolder(year, alleRechnungen);
+  const subName = typ === 'Einnahme' ? 'Einnahmen' : 'Ausgaben';
+  return await findOrCreateFolder(subName, yearFolder);
+}
+
+function sanitizeFilenamePart(s){
+  return (s || '').toString().normalize('NFKD').replace(/[^\w\- ]/g,'').trim().replace(/\s+/g,'_').slice(0,40) || 'Beleg';
+}
+
+function arrayBufferToBase64(buffer){
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  for(let i=0; i<bytes.length; i+=chunkSize){
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i+chunkSize));
+  }
+  return btoa(binary);
+}
+
+async function uploadBeleg(file, folderId, filename){
+  const metadata = { name: filename, parents:[folderId] };
+  const boundary = '-------karat' + uid();
+  const delim = `\r\n--${boundary}\r\n`;
+  const closeDelim = `\r\n--${boundary}--`;
+  const base64Data = arrayBufferToBase64(await file.arrayBuffer());
+  const body =
+    delim + 'Content-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(metadata) +
+    delim + `Content-Type: ${file.type || 'application/octet-stream'}\r\nContent-Transfer-Encoding: base64\r\n\r\n` + base64Data +
+    closeDelim;
+  const res = await fetch(`${DRIVE_UPLOAD_API}?uploadType=multipart&fields=id,webViewLink`, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body,
+  });
+  const json = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error((json.error && json.error.message) || 'Drive-Upload fehlgeschlagen');
+  return json;
+}
+
+function nextBelegnummer(){
+  const nums = [];
+  Object.values(state.projectsById).forEach(p => (p.entries||[]).forEach(e=>{ const n=parseInt(e.belegnr,10); if(!isNaN(n)) nums.push(n); }));
+  state.vereinskonto.forEach(e=>{ const n=parseInt(e.belegnr,10); if(!isNaN(n)) nums.push(n); });
+  const max = nums.length ? Math.max(...nums) : 0;
+  return String(max+1).padStart(4,'0');
+}
+
 // ============ App-State & Business-Logik ============
 let state = { projectsById:{}, vereinskonto:[], kontoRows:[], members:[] };
 let activeTab = 'dashboard';
@@ -392,6 +459,7 @@ function renderApp(){
       <div class="account-pill">
         ${userInfo && userInfo.picture ? `<img src="${userInfo.picture}">` : ''}
         <span>${userInfo ? esc(userInfo.email) : ''}</span>
+        <button class="btn ghost small" onclick="renderSetupForm()">Einstellungen</button>
         <button class="btn ghost small" onclick="signOut()">Abmelden</button>
       </div>
     </header>
@@ -466,7 +534,8 @@ function renderProjekte(){
         <td>${esc(e.datum||'')}</td><td>${esc(e.ausgabe||'')}</td>
         <td class="num neg">${eur(e.preis)}</td><td>${esc(e.kategorie||'')}</td>
         <td>${e.bezahltVon==='ausgeglichen' ? '<span class="badge settled">ausgeglichen</span>' : `<span class="badge person">${esc(e.bezahltVon)}</span>`}</td>
-        <td>${e.zahlweg? accLabel(e.zahlweg): ''}</td><td>${esc(e.belegnr||'')}</td>
+        <td>${e.zahlweg? accLabel(e.zahlweg): ''}</td>
+        <td>${e.belegUrl ? `<a href="${escAttr(e.belegUrl)}" target="_blank" rel="noopener" style="color:var(--blue);">#${esc(e.belegnr)}</a>` : (e.belegnr? '#'+esc(e.belegnr) : '—')}</td>
         <td>${e.bezahltVon!=='ausgeglichen' ? `<select data-entry-erstattet="${e.id}" style="height:32px; font-size:12.5px;">
             <option value="" ${!truthy(e.erstattet)?'selected':''}>– offen –</option>
             ${ACCOUNTS.map(a=>`<option value="${a}" ${truthy(e.erstattet)&&e.erstattetVia===a?'selected':''}>über ${accLabel(a)}</option>`).join('')}
@@ -481,6 +550,7 @@ function renderProjekte(){
           <div class="field"><label>Titel</label><input type="text" class="wide" id="p-name" value="${escAttr(p.name)}"></div>
           <div class="field"><label>Projektträger</label><input type="text" class="wide" id="p-traeger" value="${escAttr(p.traeger)}"></div>
         </div>
+        <div class="field" style="margin-top:12px;"><label>Kürzel (für Belegnamen)</label><input type="text" id="p-kuerzel" value="${escAttr(p.kuerzel||'')}" style="width:120px; text-transform:uppercase;"></div>
         <div class="grid cols-3" style="margin-top:12px;">
           <div class="field"><label>Budget (€)</label><input type="number" step="0.01" class="num-in" id="p-budget" value="${p.budget||0}"></div>
           <div class="field"><label>Einnahmen Bar (€)</label><input type="number" step="0.01" class="num-in" id="p-bar" value="${p.einnahmenBar||0}"></div>
@@ -497,7 +567,7 @@ function renderProjekte(){
         </div>
         <h3>Buchungen</h3>
         <div class="hint">Bei „Erstattet über" wählst du aus, von welchem Konto die Rückzahlung an die Person kam – das zieht den Betrag automatisch in der Kontenübersicht von diesem Konto ab.</div>
-        <table><thead><tr><th>Datum</th><th>Ausgabe</th><th>Preis</th><th>Kategorie</th><th>Bezahlt von</th><th>Zahlweg</th><th>Beleg-Nr.</th><th>Erstattet über</th><th></th></tr></thead>
+        <table><thead><tr><th>Datum</th><th>Ausgabe</th><th>Preis</th><th>Kategorie</th><th>Bezahlt von</th><th>Zahlweg</th><th>Beleg</th><th>Erstattet über</th><th></th></tr></thead>
         <tbody>${entryRows || '<tr><td colspan="9" class="empty">Noch keine Buchungen.</td></tr>'}</tbody></table>
         <div class="row-form" id="entry-form">
           <div class="field"><label>Datum</label><input type="date" id="e-datum"></div>
@@ -509,7 +579,7 @@ function renderProjekte(){
             ${state.members.map(m=>`<option value="${escAttr(m)}">${esc(m)}</option>`).join('')}
           </select></div>
           <div class="field"><label>Zahlweg (falls ausgeglichen)</label><select id="e-zahlweg"><option value="">–</option>${ACCOUNTS.map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
-          <div class="field"><label>Beleg-Nr.</label><input type="text" id="e-belegnr" style="width:90px;"></div>
+          <div class="field"><label>Beleg (PDF/Foto)</label><input type="file" id="e-beleg" accept="application/pdf,image/*" style="height:auto; padding:8px;"></div>
           <button class="btn" id="e-add">+ Buchung</button>
         </div>
         <div class="grid cols-2" style="margin-top:18px;">
@@ -524,6 +594,7 @@ function renderProjekte(){
       <div class="proj-list">${chips}</div>
       <div class="row-form">
         <div class="field"><label>Neues Projekt</label><input type="text" class="wide" id="new-proj-name" placeholder="Projekttitel"></div>
+        <div class="field"><label>Kürzel</label><input type="text" id="new-proj-kuerzel" placeholder="z.B. HHF" style="width:100px; text-transform:uppercase;"></div>
         <button class="btn" id="new-proj-add">+ Projekt anlegen</button>
       </div>
     </div>
@@ -534,6 +605,7 @@ function renderKontobewegungen(){
   const rows = state.vereinskonto.map(e=>`
     <tr><td>${esc(e.datum||'')}</td><td>${accLabel(e.konto||'Vereinskonto')}</td><td>${esc(e.kategorie||'')}${e.quelleBuchungId?' <span class="badge person" style="margin-left:4px;">automatisch</span>':''}</td><td>${esc(e.beschreibung||'')}</td>
       <td class="num ${e.typ==='Einnahme'?'pos':'neg'}">${eur(e.betrag)}</td><td>${e.typ}</td>
+      <td>${e.belegUrl ? `<a href="${escAttr(e.belegUrl)}" target="_blank" rel="noopener" style="color:var(--blue);">#${esc(e.belegnr)}</a>` : (e.belegnr? '#'+esc(e.belegnr) : '—')}</td>
       <td><button class="btn danger small" data-del-vk="${e.id}">×</button></td></tr>`).join('');
   return `
     <div class="grid cols-3" style="margin-bottom:16px;">
@@ -544,8 +616,8 @@ function renderKontobewegungen(){
     <div class="card">
       <h2>Kontobewegungen</h2>
       <div class="hint">Für alles, was nicht direkt über ein Projekt läuft: Mietanteile & Fixkosten übers Bankkonto, Wechselgeld/Entnahmen bei der Barkasse, gelegentliche Restbudget-Einzahlungen aus einem Projekt.</div>
-      <table><thead><tr><th>Datum</th><th>Konto</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th><th>Typ</th><th></th></tr></thead>
-      <tbody>${rows || '<tr><td colspan="7" class="empty">Noch keine Einträge.</td></tr>'}</tbody></table>
+      <table><thead><tr><th>Datum</th><th>Konto</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th><th>Typ</th><th>Beleg</th><th></th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="8" class="empty">Noch keine Einträge.</td></tr>'}</tbody></table>
       <div class="row-form">
         <div class="field"><label>Datum</label><input type="date" id="vk-datum"></div>
         <div class="field"><label>Konto</label><select id="vk-konto">${ACCOUNTS.map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
@@ -553,6 +625,7 @@ function renderKontobewegungen(){
         <div class="field"><label>Beschreibung</label><input type="text" class="wide" id="vk-beschreibung"></div>
         <div class="field"><label>Betrag €</label><input type="number" step="0.01" class="num-in" id="vk-betrag"></div>
         <div class="field"><label>Typ</label><select id="vk-typ"><option>Einnahme</option><option>Ausgabe</option></select></div>
+        <div class="field"><label>Beleg (optional)</label><input type="file" id="vk-beleg" accept="application/pdf,image/*" style="height:auto; padding:8px;"></div>
         <button class="btn" id="vk-add">+ Eintrag</button>
       </div>
     </div>`;
@@ -620,9 +693,10 @@ function bindEvents(){
   const newProjBtn = document.getElementById('new-proj-add');
   if(newProjBtn) newProjBtn.onclick = async ()=>{
     const name = document.getElementById('new-proj-name').value.trim();
+    const kuerzel = document.getElementById('new-proj-kuerzel').value.trim().toUpperCase();
     if(!name) return;
     await withBusy('Speichert…', async ()=>{
-      await appendRow('Projekte', {id:uid(), name, traeger:'Studio Karat', budget:0, einnahmenBar:0, einnahmenShop:0});
+      await appendRow('Projekte', {id:uid(), name, kuerzel: kuerzel || 'ALLG', traeger:'Studio Karat', budget:0, einnahmenBar:0, einnahmenShop:0});
       await refresh();
     });
     renderContent();
@@ -633,6 +707,7 @@ function bindEvents(){
     const updated = {
       id: p.id,
       name: document.getElementById('p-name').value.trim(),
+      kuerzel: document.getElementById('p-kuerzel').value.trim().toUpperCase() || 'ALLG',
       traeger: document.getElementById('p-traeger').value.trim(),
       budget: num(document.getElementById('p-budget').value),
       einnahmenBar: num(document.getElementById('p-bar').value),
@@ -663,17 +738,29 @@ function bindEvents(){
     const preis = num(document.getElementById('e-preis').value);
     const ausgabe = document.getElementById('e-ausgabe').value.trim();
     if(!ausgabe || !preis){ showToast('Bitte Ausgabe und Preis angeben'); return; }
-    const entry = {
-      id: uid(), projektId: activeProjectId,
-      datum: document.getElementById('e-datum').value,
-      ausgabe, preis,
-      kategorie: document.getElementById('e-kategorie').value,
-      bezahltVon,
-      zahlweg: bezahltVon==='ausgeglichen' ? document.getElementById('e-zahlweg').value : '',
-      belegnr: document.getElementById('e-belegnr').value.trim(),
-      erstattet:false, erstattetVia:'',
-    };
-    await withBusy('Speichert…', async ()=>{ await appendRow('Buchungen', entry); await refresh(); });
+    const datum = document.getElementById('e-datum').value || new Date().toISOString().slice(0,10);
+    const file = document.getElementById('e-beleg').files[0];
+    const p = state.projectsById[activeProjectId];
+    await withBusy(file ? 'Lädt Beleg hoch…' : 'Speichert…', async ()=>{
+      const belegnr = nextBelegnummer();
+      let belegUrl = '';
+      if(file){
+        const folderId = await resolveBelegFolder('Ausgabe', datum);
+        const ext = (file.name.split('.').pop() || 'pdf');
+        const filename = `${datum}_${belegnr}_${p.kuerzel||'ALLG'}_${sanitizeFilenamePart(ausgabe)}.${ext}`;
+        const uploaded = await uploadBeleg(file, folderId, filename);
+        belegUrl = uploaded.webViewLink || '';
+      }
+      const entry = {
+        id: uid(), projektId: activeProjectId, datum, ausgabe, preis,
+        kategorie: document.getElementById('e-kategorie').value,
+        bezahltVon,
+        zahlweg: bezahltVon==='ausgeglichen' ? document.getElementById('e-zahlweg').value : '',
+        belegnr, erstattet:false, erstattetVia:'', belegUrl,
+      };
+      await appendRow('Buchungen', entry);
+      await refresh();
+    });
     renderContent();
   };
   document.querySelectorAll('[data-del-entry]').forEach(el=>el.onclick=async()=>{
@@ -721,15 +808,28 @@ function bindEvents(){
     const beschreibung = document.getElementById('vk-beschreibung').value.trim();
     const betrag = num(document.getElementById('vk-betrag').value);
     if(!beschreibung || !betrag){ showToast('Bitte Beschreibung und Betrag angeben'); return; }
-    const entry = {
-      id: uid(),
-      datum: document.getElementById('vk-datum').value,
-      konto: document.getElementById('vk-konto').value,
-      kategorie: document.getElementById('vk-kategorie').value.trim(),
-      beschreibung, betrag,
-      typ: document.getElementById('vk-typ').value,
-    };
-    await withBusy('Speichert…', async ()=>{ await appendRow('Vereinskonto', entry); await refresh(); });
+    const datum = document.getElementById('vk-datum').value || new Date().toISOString().slice(0,10);
+    const typ = document.getElementById('vk-typ').value;
+    const file = document.getElementById('vk-beleg').files[0];
+    await withBusy(file ? 'Lädt Beleg hoch…' : 'Speichert…', async ()=>{
+      const belegnr = nextBelegnummer();
+      let belegUrl = '';
+      if(file){
+        const folderId = await resolveBelegFolder(typ, datum);
+        const ext = (file.name.split('.').pop() || 'pdf');
+        const filename = `${datum}_${belegnr}_ALLG_${sanitizeFilenamePart(beschreibung)}.${ext}`;
+        const uploaded = await uploadBeleg(file, folderId, filename);
+        belegUrl = uploaded.webViewLink || '';
+      }
+      const entry = {
+        id: uid(), datum,
+        konto: document.getElementById('vk-konto').value,
+        kategorie: document.getElementById('vk-kategorie').value.trim(),
+        beschreibung, betrag, typ, belegnr, belegUrl, quelleBuchungId:'',
+      };
+      await appendRow('Vereinskonto', entry);
+      await refresh();
+    });
     renderContent();
   };
   document.querySelectorAll('[data-del-vk]').forEach(el=>el.onclick=async()=>{
@@ -784,22 +884,26 @@ function bindEvents(){
 
 // ============ Setup- / Sign-in-Screens ============
 function renderSetupForm(){
+  const cfg = CONFIG || {};
   document.getElementById('page').innerHTML = `
     <div class="setup-card">
       <h2>Einrichtung</h2>
       <p>Einmalig einrichten. Diese Angaben werden nur lokal in diesem Browser gespeichert, nicht irgendwo hochgeladen.</p>
-      <div class="field"><label>OAuth Client-ID (aus Google Cloud Console)</label><input type="text" id="cfg-client" placeholder="123456789-abc...apps.googleusercontent.com"></div>
-      <div class="field"><label>Google Sheet ID (aus der Sheets-URL)</label><input type="text" id="cfg-sheet" placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz..."></div>
+      <div class="field"><label>OAuth Client-ID (aus Google Cloud Console)</label><input type="text" id="cfg-client" value="${escAttr(cfg.clientId||'')}" placeholder="123456789-abc...apps.googleusercontent.com"></div>
+      <div class="field"><label>Google Sheet ID (aus der Sheets-URL)</label><input type="text" id="cfg-sheet" value="${escAttr(cfg.spreadsheetId||'')}" placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz..."></div>
+      <div class="field"><label>Finanzen-Ordner-ID in Drive (für Belege)</label><input type="text" id="cfg-folder" value="${escAttr(cfg.financeFolderId||'')}" placeholder="1XyZ... (aus der Drive-Ordner-URL)"></div>
       <button class="btn" style="width:100%;" id="cfg-save">Speichern & verbinden</button>
     </div>`;
   document.getElementById('cfg-save').onclick = ()=>{
     const clientId = document.getElementById('cfg-client').value.trim();
     const spreadsheetId = document.getElementById('cfg-sheet').value.trim();
-    if(!clientId || !spreadsheetId){ showToast('Bitte beide Felder ausfüllen'); return; }
-    CONFIG = { clientId, spreadsheetId };
+    const financeFolderId = document.getElementById('cfg-folder').value.trim();
+    if(!clientId || !spreadsheetId){ showToast('Bitte Client-ID und Sheet-ID ausfüllen'); return; }
+    const changed = !CONFIG || CONFIG.clientId !== clientId;
+    CONFIG = { clientId, spreadsheetId, financeFolderId };
     localStorage.setItem('karat_config', JSON.stringify(CONFIG));
-    initGis();
-    renderSetupOrSignIn();
+    if(changed || !tokenClient) initGis();
+    if(accessToken){ boot(); } else { renderSetupOrSignIn(); }
   };
 }
 
