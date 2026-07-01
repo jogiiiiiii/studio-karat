@@ -567,18 +567,24 @@ function renderProjekte(){
     const personRows = state.members.filter(m=>pByPerson(p,m)>0).map(m=>`<tr><td>${esc(m)}</td><td class="num">${eur(pByPerson(p,m))}</td></tr>`).join('') || '<tr><td colspan="2" class="empty">Niemand hat bisher privat ausgelegt.</td></tr>';
     detail = `
       <div class="card">
-        <div class="grid cols-2">
-          <div class="field"><label>Titel</label><input type="text" class="wide" id="p-name" value="${escAttr(p.name)}"></div>
-          <div class="field"><label>Projektträger</label><input type="text" class="wide" id="p-traeger" value="${escAttr(p.traeger)}"></div>
+        <div class="grid cols-3">
+          <div class="field"><label>Titel</label><input type="text" id="p-name" value="${escAttr(p.name)}"></div>
+          <div class="field"><label>Kürzel</label><input type="text" id="p-kuerzel" value="${escAttr(p.kuerzel||'')}" style="text-transform:uppercase;"></div>
+          <div class="field"><label>Projektträger</label><input type="text" id="p-traeger" value="${escAttr(p.traeger)}"></div>
         </div>
-        <div class="field" style="margin-top:12px;"><label>Kürzel (für Belegnamen)</label><input type="text" id="p-kuerzel" value="${escAttr(p.kuerzel||'')}" style="width:120px; text-transform:uppercase;"></div>
-        <div class="row-form">
+        <div class="row-form" style="justify-content:flex-end;">
           <button class="btn ghost" id="p-save-meta">Angaben speichern</button>
-          <button class="btn danger" id="p-delete" style="margin-left:auto;">Projekt löschen</button>
+          <button class="btn danger" id="p-delete">Projekt löschen</button>
         </div>
       </div>
       <div class="card">
         <div class="grid cols-3">
+          <div class="field"><label>Budget (€)</label><input type="number" step="0.01" class="num-in" id="p-budget" value="${p.budget||0}"></div>
+          <div class="field"><label>Einnahmen Bar (€)</label><input type="number" step="0.01" class="num-in" id="p-bar" value="${p.einnahmenBar||0}"></div>
+          <div class="field"><label>Einnahmen PayPal (€)</label><input type="number" step="0.01" class="num-in" id="p-shop" value="${p.einnahmenShop||0}"></div>
+        </div>
+        <div class="row-form"><button class="btn ghost" id="p-save-einnahmen">Speichern</button></div>
+        <div class="grid cols-3" style="margin-top:18px;">
           <div class="kpi"><div class="label">Einnahmen</div><div class="value pos">${eur(pEinnahmen(p))}</div></div>
           <div class="kpi"><div class="label">Ausgaben</div><div class="value neg">${eur(pAusgaben(p))}</div></div>
           <div class="kpi"><div class="label">Restbudget</div><div class="value ${pDifferenz(p)>=0?'pos':'neg'}">${eur(pDifferenz(p))}</div></div>
@@ -728,6 +734,21 @@ function bindEvents(){
       budget: p.budget || 0,
       einnahmenBar: p.einnahmenBar || 0,
       einnahmenShop: p.einnahmenShop || 0,
+    };
+    await withBusy('Speichert…', async ()=>{ await updateRow('Projekte', p.__row, updated); await refresh(); });
+    renderContent(); showToast('Gespeichert');
+  };
+  const saveEinnahmenBtn = document.getElementById('p-save-einnahmen');
+  if(saveEinnahmenBtn) saveEinnahmenBtn.onclick = async ()=>{
+    const p = state.projectsById[activeProjectId];
+    const updated = {
+      id: p.id,
+      name: p.name,
+      kuerzel: p.kuerzel || 'ALLG',
+      traeger: p.traeger,
+      budget: num(document.getElementById('p-budget').value),
+      einnahmenBar: num(document.getElementById('p-bar').value),
+      einnahmenShop: num(document.getElementById('p-shop').value),
     };
     await withBusy('Speichert…', async ()=>{ await updateRow('Projekte', p.__row, updated); await refresh(); });
     renderContent(); showToast('Gespeichert');
