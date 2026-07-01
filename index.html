@@ -360,10 +360,23 @@ function nextBelegnummer(){
   return String(max+1).padStart(4,'0');
 }
 
+function extractDriveFileId(url){
+  if(!url) return null;
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+async function trashDriveFile(url){
+  const id = extractDriveFileId(url);
+  if(!id) return;
+  try { await apiFetch(`${DRIVE_FILES_API}/${id}`, 'PATCH', { trashed:true }); }
+  catch(e){ console.error('Beleg konnte nicht in den Papierkorb verschoben werden', e); }
+}
+
 // ============ App-State & Business-Logik ============
 let state = { projectsById:{}, vereinskonto:[], kontoRows:[], members:[] };
 let activeTab = 'dashboard';
 let activeProjectId = null;
+let editingEntryId = null;
 
 function eur(n){ n=+n||0; return n.toLocaleString('de-DE',{style:'currency',currency:'EUR'}); }
 function num(v){ const n=parseFloat(v); return isNaN(n)?0:n; }
@@ -475,6 +488,7 @@ function renderTabs(){
 }
 function switchTab(id){
   activeTab = id;
+  editingEntryId = null;
   renderTabs();
   renderContent();
 }
@@ -533,7 +547,7 @@ function renderProjekte(){
   if(activeProjectId){
     const p = state.projectsById[activeProjectId];
     const entryRows = (p.entries||[]).map(e=>`
-      <tr>
+      <tr${editingEntryId===e.id?' style="background:var(--blue-bg);"':''}>
         <td>${esc(e.datum||'')}</td><td>${esc(e.ausgabe||'')}</td>
         <td class="num neg">${eur(e.preis)}</td><td>${esc(e.kategorie||'')}</td>
         <td>${e.bezahltVon==='ausgeglichen' ? '<span class="badge settled">ausgeglichen</span>' : `<span class="badge person">${esc(e.bezahltVon)}</span>`}</td>
@@ -543,7 +557,10 @@ function renderProjekte(){
             <option value="" ${!truthy(e.erstattet)?'selected':''}>– offen –</option>
             ${ACCOUNTS.map(a=>`<option value="${a}" ${truthy(e.erstattet)&&e.erstattetVia===a?'selected':''}>über ${accLabel(a)}</option>`).join('')}
           </select>` : '—'}</td>
-        <td><button class="btn danger small" data-del-entry="${e.id}">×</button></td>
+        <td style="white-space:nowrap;">
+          <button class="btn ghost small" data-edit-entry="${e.id}">Bearbeiten</button>
+          <button class="btn danger small" data-del-entry="${e.id}">×</button>
+        </td>
       </tr>`).join('');
     const kontoRows = ACCOUNTS.map(a=>`<tr><td>${accLabel(a)}</td><td class="num neg">${eur(pByKonto(p,a))}</td></tr>`).join('');
     const personRows = state.members.filter(m=>pByPerson(p,m)>0).map(m=>`<tr><td>${esc(m)}</td><td class="num">${eur(pByPerson(p,m))}</td></tr>`).join('') || '<tr><td colspan="2" class="empty">Niemand hat bisher privat ausgelegt.</td></tr>';
@@ -570,19 +587,24 @@ function renderProjekte(){
         <div class="hint">Bei „Erstattet über" wählst du aus, von welchem Konto die Rückzahlung an die Person kam – das zieht den Betrag automatisch in der Kontenübersicht von diesem Konto ab.</div>
         <table><thead><tr><th>Datum</th><th>Ausgabe</th><th>Preis</th><th>Kategorie</th><th>Bezahlt von</th><th>Zahlweg</th><th>Beleg</th><th>Erstattet über</th><th></th></tr></thead>
         <tbody>${entryRows || '<tr><td colspan="9" class="empty">Noch keine Buchungen.</td></tr>'}</tbody></table>
+        ${(()=>{
+          const editing = editingEntryId ? (p.entries||[]).find(e=>e.id===editingEntryId) : null;
+          return `
         <div class="row-form" id="entry-form">
-          <div class="field"><label>Datum</label><input type="date" id="e-datum"></div>
-          <div class="field"><label>Ausgabe</label><input type="text" class="wide" id="e-ausgabe" placeholder="z.B. Getränke"></div>
-          <div class="field"><label>Preis €</label><input type="number" step="0.01" class="num-in" id="e-preis"></div>
-          <div class="field"><label>Kategorie</label><select id="e-kategorie">${KATEGORIEN.map(k=>`<option>${k}</option>`).join('')}</select></div>
+          <div class="field"><label>Datum</label><input type="date" id="e-datum" value="${editing?esc(editing.datum||''):''}"></div>
+          <div class="field"><label>Ausgabe</label><input type="text" class="wide" id="e-ausgabe" placeholder="z.B. Getränke" value="${editing?escAttr(editing.ausgabe||''):''}"></div>
+          <div class="field"><label>Preis €</label><input type="number" step="0.01" class="num-in" id="e-preis" value="${editing?editing.preis:''}"></div>
+          <div class="field"><label>Kategorie</label><select id="e-kategorie">${KATEGORIEN.map(k=>`<option ${editing&&editing.kategorie===k?'selected':''}>${k}</option>`).join('')}</select></div>
           <div class="field"><label>Bezahlt von</label><select id="e-bezahltvon">
-            <option value="ausgeglichen">ausgeglichen</option>
-            ${state.members.map(m=>`<option value="${escAttr(m)}">${esc(m)}</option>`).join('')}
+            <option value="ausgeglichen" ${editing&&editing.bezahltVon==='ausgeglichen'?'selected':''}>ausgeglichen</option>
+            ${state.members.map(m=>`<option value="${escAttr(m)}" ${editing&&editing.bezahltVon===m?'selected':''}>${esc(m)}</option>`).join('')}
           </select></div>
-          <div class="field"><label>Zahlweg (falls ausgeglichen)</label><select id="e-zahlweg"><option value="">–</option>${ACCOUNTS.map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
-          <div class="field"><label>Beleg (PDF/Foto)</label><input type="file" id="e-beleg" accept="application/pdf,image/*" style="height:auto; padding:8px;"></div>
-          <button class="btn" id="e-add">+ Buchung</button>
-        </div>
+          <div class="field"><label>Zahlweg (falls ausgeglichen)</label><select id="e-zahlweg"><option value="">–</option>${ACCOUNTS.map(a=>`<option value="${a}" ${editing&&editing.zahlweg===a?'selected':''}>${accLabel(a)}</option>`).join('')}</select></div>
+          <div class="field"><label>Beleg ${editing?'(nur bei Ersatz auswählen)':'(PDF/Foto)'}</label><input type="file" id="e-beleg" accept="application/pdf,image/*" style="height:auto; padding:8px;"></div>
+          <button class="btn" id="e-add">${editing?'Speichern':'+ Buchung'}</button>
+          ${editing?'<button class="btn ghost" id="e-cancel">Abbrechen</button>':''}
+        </div>`;
+        })()}
         <div class="grid cols-2" style="margin-top:18px;">
           <div><h3>Nach Konto (Ausgaben)</h3><table><thead><tr><th>Konto</th><th>Ausgaben</th></tr></thead><tbody>${kontoRows}</tbody></table></div>
           <div><h3>Nach Person (privat ausgelegt)</h3><table><thead><tr><th>Person</th><th>Ausgelegt</th></tr></thead><tbody>${personRows}</tbody></table></div>
@@ -675,7 +697,7 @@ function renderVerrechnung(){
 
 // ---------- Events ----------
 function bindEvents(){
-  document.querySelectorAll('[data-pid]').forEach(el=>el.onclick=()=>{ activeProjectId = el.dataset.pid; renderContent(); });
+  document.querySelectorAll('[data-pid]').forEach(el=>el.onclick=()=>{ activeProjectId = el.dataset.pid; editingEntryId = null; renderContent(); });
 
   const newProjBtn = document.getElementById('new-proj-add');
   if(newProjBtn) newProjBtn.onclick = async ()=>{
@@ -713,14 +735,17 @@ function bindEvents(){
     const p = state.projectsById[activeProjectId];
     const entryRows = (p.entries||[]).map(e=>e.__row);
     const entryIds = (p.entries||[]).map(e=>e.id);
-    const linkedVkRows = state.vereinskonto.filter(v=>entryIds.includes(v.quelleBuchungId)).map(v=>v.__row);
+    const linkedVk = state.vereinskonto.filter(v=>entryIds.includes(v.quelleBuchungId));
     await withBusy('Löscht…', async ()=>{
+      const belegUrls = [...(p.entries||[]).map(e=>e.belegUrl), ...linkedVk.map(v=>v.belegUrl)].filter(Boolean);
+      await Promise.all(belegUrls.map(u=>trashDriveFile(u)));
       await deleteRows('Buchungen', entryRows);
-      await deleteRows('Vereinskonto', linkedVkRows);
+      await deleteRows('Vereinskonto', linkedVk.map(v=>v.__row));
       await deleteRows('Projekte', [p.__row]);
       await refresh();
     });
     activeProjectId = null;
+    editingEntryId = null;
     renderContent();
   };
   const addEntryBtn = document.getElementById('e-add');
@@ -730,39 +755,51 @@ function bindEvents(){
     const ausgabe = document.getElementById('e-ausgabe').value.trim();
     if(!ausgabe || !preis){ showToast('Bitte Ausgabe und Preis angeben'); return; }
     const datum = document.getElementById('e-datum').value || new Date().toISOString().slice(0,10);
+    const kategorie = document.getElementById('e-kategorie').value;
+    const zahlweg = bezahltVon==='ausgeglichen' ? document.getElementById('e-zahlweg').value : '';
     const file = document.getElementById('e-beleg').files[0];
     const p = state.projectsById[activeProjectId];
+    const editing = editingEntryId ? (p.entries||[]).find(e=>e.id===editingEntryId) : null;
+
     await withBusy(file ? 'Lädt Beleg hoch…' : 'Speichert…', async ()=>{
-      const belegnr = nextBelegnummer();
-      let belegUrl = '';
+      let belegnr = editing ? editing.belegnr : nextBelegnummer();
+      let belegUrl = editing ? editing.belegUrl : '';
       if(file){
+        if(editing && editing.belegUrl) await trashDriveFile(editing.belegUrl);
+        if(!belegnr) belegnr = nextBelegnummer();
         const folderId = await resolveBelegFolder('Ausgabe', datum);
         const ext = (file.name.split('.').pop() || 'pdf');
         const filename = `${datum}_${belegnr}_${p.kuerzel||'ALLG'}_${sanitizeFilenamePart(ausgabe)}.${ext}`;
         const uploaded = await uploadBeleg(file, folderId, filename);
         belegUrl = uploaded.webViewLink || '';
       }
-      const entry = {
-        id: uid(), projektId: activeProjectId, datum, ausgabe, preis,
-        kategorie: document.getElementById('e-kategorie').value,
-        bezahltVon,
-        zahlweg: bezahltVon==='ausgeglichen' ? document.getElementById('e-zahlweg').value : '',
-        belegnr, erstattet:false, erstattetVia:'', belegUrl,
-      };
-      await appendRow('Buchungen', entry);
+      if(editing){
+        const updated = Object.assign({}, editing, { datum, ausgabe, preis, kategorie, bezahltVon, zahlweg, belegnr, belegUrl });
+        await updateRow('Buchungen', editing.__row, updated);
+        editingEntryId = null;
+      } else {
+        const entry = { id: uid(), projektId: activeProjectId, datum, ausgabe, preis, kategorie, bezahltVon, zahlweg, belegnr, erstattet:false, erstattetVia:'', belegUrl };
+        await appendRow('Buchungen', entry);
+      }
       await refresh();
     });
     renderContent();
   };
+  const cancelEditBtn = document.getElementById('e-cancel');
+  if(cancelEditBtn) cancelEditBtn.onclick = ()=>{ editingEntryId = null; renderContent(); };
+  document.querySelectorAll('[data-edit-entry]').forEach(el=>el.onclick=()=>{ editingEntryId = el.dataset.editEntry; renderContent(); });
   document.querySelectorAll('[data-del-entry]').forEach(el=>el.onclick=async()=>{
     const p = state.projectsById[activeProjectId];
     const entry = (p.entries||[]).find(e=>e.id===el.dataset.delEntry);
     const linked = state.vereinskonto.find(v=>v.quelleBuchungId===entry.id);
     await withBusy('Löscht…', async ()=>{
+      if(entry.belegUrl) await trashDriveFile(entry.belegUrl);
+      if(linked && linked.belegUrl) await trashDriveFile(linked.belegUrl);
       await deleteRows('Buchungen', [entry.__row]);
       if(linked) await deleteRows('Vereinskonto', [linked.__row]);
       await refresh();
     });
+    if(editingEntryId === entry.id) editingEntryId = null;
     renderContent();
   });
   document.querySelectorAll('[data-entry-erstattet]').forEach(el=>el.onchange=async()=>{
@@ -826,6 +863,7 @@ function bindEvents(){
   document.querySelectorAll('[data-del-vk]').forEach(el=>el.onclick=async()=>{
     const entry = state.vereinskonto.find(e=>e.id===el.dataset.delVk);
     await withBusy('Löscht…', async ()=>{
+      if(entry.belegUrl) await trashDriveFile(entry.belegUrl);
       await deleteRows('Vereinskonto', [entry.__row]);
       if(entry.quelleBuchungId){
         for(const proj of Object.values(state.projectsById)){
