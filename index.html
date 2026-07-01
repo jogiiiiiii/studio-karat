@@ -445,7 +445,6 @@ const TABS = [
   {id:'kontobewegungen', label:'Kontobewegungen'},
   {id:'kontenuebersicht', label:'Kontenübersicht'},
   {id:'verrechnung', label:'Verrechnung'},
-  {id:'mitglieder', label:'Mitglieder'},
 ];
 
 function renderApp(){
@@ -472,7 +471,12 @@ function renderApp(){
 function renderTabs(){
   const nav = document.getElementById('tabs');
   nav.innerHTML = TABS.map(t=>`<button class="${activeTab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
-  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{ activeTab=b.dataset.tab; renderContent(); });
+  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+}
+function switchTab(id){
+  activeTab = id;
+  renderTabs();
+  renderContent();
 }
 
 function renderContent(){
@@ -482,7 +486,6 @@ function renderContent(){
   else if(activeTab==='kontobewegungen') c.innerHTML = renderKontobewegungen();
   else if(activeTab==='kontenuebersicht') c.innerHTML = renderKontenuebersicht();
   else if(activeTab==='verrechnung') c.innerHTML = renderVerrechnung();
-  else if(activeTab==='mitglieder') c.innerHTML = renderMitglieder();
   bindEvents();
 }
 
@@ -550,11 +553,9 @@ function renderProjekte(){
           <div class="field"><label>Titel</label><input type="text" class="wide" id="p-name" value="${escAttr(p.name)}"></div>
           <div class="field"><label>Projektträger</label><input type="text" class="wide" id="p-traeger" value="${escAttr(p.traeger)}"></div>
         </div>
-        <div class="field" style="margin-top:12px;"><label>Kürzel (für Belegnamen)</label><input type="text" id="p-kuerzel" value="${escAttr(p.kuerzel||'')}" style="width:120px; text-transform:uppercase;"></div>
-        <div class="grid cols-3" style="margin-top:12px;">
+        <div class="grid cols-2" style="margin-top:12px;">
+          <div class="field"><label>Kürzel (für Belegnamen)</label><input type="text" id="p-kuerzel" value="${escAttr(p.kuerzel||'')}" style="width:120px; text-transform:uppercase;"></div>
           <div class="field"><label>Budget (€)</label><input type="number" step="0.01" class="num-in" id="p-budget" value="${p.budget||0}"></div>
-          <div class="field"><label>Einnahmen Bar (€)</label><input type="number" step="0.01" class="num-in" id="p-bar" value="${p.einnahmenBar||0}"></div>
-          <div class="field"><label>Einnahmen Shop/PayPal (€)</label><input type="number" step="0.01" class="num-in" id="p-shop" value="${p.einnahmenShop||0}"></div>
         </div>
         <div class="row-form">
           <button class="btn ghost" id="p-save-meta">Angaben speichern</button>
@@ -592,9 +593,14 @@ function renderProjekte(){
     <div class="card">
       <h2>Projekte</h2>
       <div class="proj-list">${chips}</div>
+      <h3>Neues Projekt</h3>
       <div class="row-form">
-        <div class="field"><label>Neues Projekt</label><input type="text" class="wide" id="new-proj-name" placeholder="Projekttitel"></div>
+        <div class="field"><label>Titel</label><input type="text" class="wide" id="new-proj-name" placeholder="Projekttitel"></div>
         <div class="field"><label>Kürzel</label><input type="text" id="new-proj-kuerzel" placeholder="z.B. HHF" style="width:100px; text-transform:uppercase;"></div>
+        <div class="field"><label>Projektträger</label><input type="text" id="new-proj-traeger" value="Studio Karat" style="width:160px;"></div>
+        <div class="field"><label>Budget (€)</label><input type="number" step="0.01" class="num-in" id="new-proj-budget" value="0"></div>
+        <div class="field"><label>Einnahmen Bar (€)</label><input type="number" step="0.01" class="num-in" id="new-proj-bar" value="0"></div>
+        <div class="field"><label>Einnahmen Shop/PayPal (€)</label><input type="number" step="0.01" class="num-in" id="new-proj-shop" value="0"></div>
         <button class="btn" id="new-proj-add">+ Projekt anlegen</button>
       </div>
     </div>
@@ -667,25 +673,6 @@ function renderVerrechnung(){
     </div>`;
 }
 
-function renderMitglieder(){
-  const rows = state.members.map((m,i)=>`
-    <div class="member-edit">
-      <input type="text" data-member-idx="${i}" value="${escAttr(m)}" style="min-width:180px;">
-      <button class="btn danger small" data-del-member="${i}">×</button>
-    </div>`).join('');
-  return `
-    <div class="card">
-      <h2>Mitglieder</h2>
-      <div class="hint">Namen anpassen. Bereits gebuchte Einträge behalten den alten Namen als Text.</div>
-      ${rows}
-      <div class="row-form">
-        <div class="field"><label>Neues Mitglied</label><input type="text" id="new-member-name" style="min-width:180px;"></div>
-        <button class="btn" id="add-member">+ Hinzufügen</button>
-      </div>
-      <div class="row-form"><button class="btn ghost" id="save-members">Namen speichern</button></div>
-    </div>`;
-}
-
 // ---------- Events ----------
 function bindEvents(){
   document.querySelectorAll('[data-pid]').forEach(el=>el.onclick=()=>{ activeProjectId = el.dataset.pid; renderContent(); });
@@ -694,9 +681,13 @@ function bindEvents(){
   if(newProjBtn) newProjBtn.onclick = async ()=>{
     const name = document.getElementById('new-proj-name').value.trim();
     const kuerzel = document.getElementById('new-proj-kuerzel').value.trim().toUpperCase();
+    const traeger = document.getElementById('new-proj-traeger').value.trim() || 'Studio Karat';
+    const budget = num(document.getElementById('new-proj-budget').value);
+    const einnahmenBar = num(document.getElementById('new-proj-bar').value);
+    const einnahmenShop = num(document.getElementById('new-proj-shop').value);
     if(!name) return;
     await withBusy('Speichert…', async ()=>{
-      await appendRow('Projekte', {id:uid(), name, kuerzel: kuerzel || 'ALLG', traeger:'Studio Karat', budget:0, einnahmenBar:0, einnahmenShop:0});
+      await appendRow('Projekte', {id:uid(), name, kuerzel: kuerzel || 'ALLG', traeger, budget, einnahmenBar, einnahmenShop});
       await refresh();
     });
     renderContent();
@@ -710,8 +701,8 @@ function bindEvents(){
       kuerzel: document.getElementById('p-kuerzel').value.trim().toUpperCase() || 'ALLG',
       traeger: document.getElementById('p-traeger').value.trim(),
       budget: num(document.getElementById('p-budget').value),
-      einnahmenBar: num(document.getElementById('p-bar').value),
-      einnahmenShop: num(document.getElementById('p-shop').value),
+      einnahmenBar: p.einnahmenBar || 0,
+      einnahmenShop: p.einnahmenShop || 0,
     };
     await withBusy('Speichert…', async ()=>{ await updateRow('Projekte', p.__row, updated); await refresh(); });
     renderContent(); showToast('Gespeichert');
@@ -885,14 +876,33 @@ function bindEvents(){
 // ============ Setup- / Sign-in-Screens ============
 function renderSetupForm(){
   const cfg = CONFIG || {};
+  const canGoBack = !!(CONFIG && accessToken);
+  const memberRows = canGoBack ? state.members.map((m,i)=>`
+      <div class="member-edit">
+        <input type="text" data-member-idx="${i}" value="${escAttr(m)}" style="min-width:180px;">
+        <button class="btn danger small" data-del-member="${i}">×</button>
+      </div>`).join('') : '';
   document.getElementById('page').innerHTML = `
     <div class="setup-card">
-      <h2>Einrichtung</h2>
-      <p>Einmalig einrichten. Diese Angaben werden nur lokal in diesem Browser gespeichert, nicht irgendwo hochgeladen.</p>
+      <h2>Einstellungen</h2>
+      <p>Verbindungsdaten werden nur lokal in diesem Browser gespeichert, nicht irgendwo hochgeladen.</p>
       <div class="field"><label>OAuth Client-ID (aus Google Cloud Console)</label><input type="text" id="cfg-client" value="${escAttr(cfg.clientId||'')}" placeholder="123456789-abc...apps.googleusercontent.com"></div>
       <div class="field"><label>Google Sheet ID (aus der Sheets-URL)</label><input type="text" id="cfg-sheet" value="${escAttr(cfg.spreadsheetId||'')}" placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz..."></div>
       <div class="field"><label>Finanzen-Ordner-ID in Drive (für Belege)</label><input type="text" id="cfg-folder" value="${escAttr(cfg.financeFolderId||'')}" placeholder="1XyZ... (aus der Drive-Ordner-URL)"></div>
-      <button class="btn" style="width:100%;" id="cfg-save">Speichern & verbinden</button>
+      <div class="row-form">
+        <button class="btn" id="cfg-save">Speichern & verbinden</button>
+        ${canGoBack ? '<button class="btn ghost" id="cfg-back">Zurück, ohne zu speichern</button>' : ''}
+      </div>
+      ${canGoBack ? `
+        <h3 style="margin-top:26px;">Mitglieder</h3>
+        <div class="hint">Namen anpassen. Bereits gebuchte Einträge behalten den alten Namen als Text.</div>
+        ${memberRows}
+        <div class="row-form">
+          <div class="field"><label>Neues Mitglied</label><input type="text" id="new-member-name" style="min-width:180px;"></div>
+          <button class="btn ghost" id="add-member">+ Hinzufügen</button>
+        </div>
+        <div class="row-form"><button class="btn ghost" id="save-members">Namen speichern</button></div>
+      ` : ''}
     </div>`;
   document.getElementById('cfg-save').onclick = ()=>{
     const clientId = document.getElementById('cfg-client').value.trim();
@@ -905,6 +915,29 @@ function renderSetupForm(){
     if(changed || !tokenClient) initGis();
     if(accessToken){ boot(); } else { renderSetupOrSignIn(); }
   };
+  const backBtn = document.getElementById('cfg-back');
+  if(backBtn) backBtn.onclick = ()=> renderApp();
+  if(canGoBack){
+    const addMemberBtn = document.getElementById('add-member');
+    if(addMemberBtn) addMemberBtn.onclick = async ()=>{
+      const val = document.getElementById('new-member-name').value.trim();
+      if(!val) return;
+      const names = [...state.members, val];
+      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
+      renderSetupForm();
+    };
+    document.querySelectorAll('[data-del-member]').forEach(el=>el.onclick=async()=>{
+      const names = state.members.filter((_,i)=>i!==+el.dataset.delMember);
+      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
+      renderSetupForm();
+    });
+    const saveMembersBtn = document.getElementById('save-members');
+    if(saveMembersBtn) saveMembersBtn.onclick = async ()=>{
+      const names = state.members.map((_,i)=>document.querySelector(`[data-member-idx="${i}"]`).value.trim());
+      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
+      renderSetupForm(); showToast('Gespeichert');
+    };
+  }
 }
 
 function renderSignIn(){
