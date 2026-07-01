@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio Karat — Buchhaltung</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f2f2f7; --surface:#ffffff; --surface2:#f2f2f7;
+  --divide:rgba(60,60,67,.12); --divide-strong:rgba(60,60,67,.2);
+  --text:#1c1c1e; --text-secondary:#6e6e73; --text-tertiary:#aeaeb2;
+  --blue:#007aff; --blue-bg:rgba(0,122,255,.09);
+  --green:#34c759; --green-bg:rgba(52,199,89,.1);
+  --red:#ff3b30; --red-bg:rgba(255,59,48,.08);
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --shadow:0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --field-h:38px;
+}
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; min-height:100vh;}
+.mono{font-family:'DM Mono',monospace;}
+.page{max-width:1060px; margin:0 auto; padding:28px 20px 72px;}
+
+header.top{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:22px; flex-wrap:wrap;}
+.wordmark{display:flex; align-items:center; gap:12px;}
+.wordmark-icon{width:34px; height:34px; background:var(--blue); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.wordmark-icon svg{width:18px; height:18px;}
+h1{font-size:19px; font-weight:700; margin:0; letter-spacing:-.02em;}
+.kicker{font-size:12px; font-weight:600; color:var(--blue); text-transform:uppercase; letter-spacing:.06em; margin-top:1px;}
+.account-pill{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-secondary); background:var(--surface); border-radius:999px; padding:6px 6px 6px 12px; box-shadow:var(--shadow);}
+.account-pill img{width:22px; height:22px; border-radius:50%;}
+
+nav.tabs{display:flex; gap:4px; background:var(--surface2); border-radius:999px; padding:4px; margin-bottom:20px; flex-wrap:wrap; width:fit-content; max-width:100%;}
+nav.tabs button{font-family:'DM Sans',sans-serif; font-weight:500; font-size:13px; background:transparent; border:none;
+  padding:8px 15px; cursor:pointer; border-radius:999px; color:var(--text-secondary); transition:all .15s var(--ease); white-space:nowrap;}
+nav.tabs button.active{background:var(--surface); color:var(--text); box-shadow:var(--shadow); font-weight:600;}
+
+.card{background:var(--surface); border-radius:var(--r-xl); box-shadow:var(--shadow); padding:20px; margin-bottom:16px;}
+.card h2{font-size:11px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--text-secondary); margin:0 0 14px;}
+.card h3{font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text-secondary); margin:18px 0 8px;}
+
+.grid{display:grid; gap:12px;}
+.grid.cols-3{grid-template-columns:repeat(3,1fr);}
+.grid.cols-2{grid-template-columns:repeat(2,1fr);}
+@media(max-width:720px){.grid.cols-3,.grid.cols-2{grid-template-columns:1fr;}}
+
+.kpi{background:var(--surface); border-radius:var(--r-lg); box-shadow:var(--shadow); padding:16px 18px;}
+.kpi .label{font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary);}
+.kpi .value{font-family:'DM Mono',monospace; font-size:22px; font-weight:500; margin-top:5px; color:var(--text);}
+.kpi .value.pos{color:var(--green);} .kpi .value.neg{color:var(--red);}
+
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+th{text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary); border-bottom:1px solid var(--divide-strong); padding:8px 8px;}
+td{padding:9px 8px; border-bottom:1px solid var(--divide); vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr.total td{font-weight:600; border-top:1px solid var(--divide-strong); border-bottom:none;}
+.num{font-family:'DM Mono',monospace; text-align:right; white-space:nowrap;}
+.num.pos{color:var(--green);} .num.neg{color:var(--red);}
+
+.badge{display:inline-flex; align-items:center; padding:3px 9px; border-radius:999px; font-size:12px; font-weight:500;}
+.badge.settled{background:var(--green-bg); color:var(--green);}
+.badge.person{background:var(--blue-bg); color:var(--blue);}
+
+.row-form{display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; margin-top:12px;}
+.field{display:flex; flex-direction:column; gap:5px;}
+.field label{font-size:11.5px; font-weight:500; color:var(--text-secondary);}
+input,select{
+  height:var(--field-h); box-sizing:border-box;
+  font-family:'DM Sans',sans-serif; font-size:13.5px; padding:0 11px;
+  border:1px solid var(--divide-strong); border-radius:var(--r-md);
+  background:var(--surface2); color:var(--text); outline:none;
+  transition:border-color .15s, box-shadow .15s, background .15s;
+}
+select{
+  appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236e6e73' stroke-width='1.6'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center; background-size:14px; padding-right:30px;
+}
+input:focus, select:focus{border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-bg); background:#fff;}
+input.num-in{font-family:'DM Mono',monospace; text-align:right;}
+input[type=text].wide{min-width:180px;}
+input[type=number]{width:110px;}
+input[type=date]{width:150px;}
+
+button.btn{
+  font-family:'DM Sans',sans-serif; font-weight:600; font-size:13px; height:var(--field-h);
+  background:var(--blue); color:#fff; border:none; border-radius:var(--r-md); padding:0 18px; cursor:pointer;
+  transition:opacity .15s;
+}
+button.btn:hover{opacity:.88;}
+button.btn.ghost{background:var(--surface2); color:var(--text);}
+button.btn.danger{background:transparent; color:var(--red); height:auto; padding:5px 10px; font-size:12px;}
+button.btn.small{height:auto; padding:6px 12px; font-size:12px;}
+button.btn:disabled{opacity:.5; cursor:wait;}
+
+.proj-list{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
+.proj-chip{border:1px solid var(--divide-strong); border-radius:999px; padding:8px 16px; cursor:pointer; background:var(--surface);
+  font-size:13px; font-weight:500; transition:all .15s var(--ease);}
+.proj-chip.active{background:var(--blue); color:#fff; border-color:var(--blue);}
+
+.hint{font-size:12px; color:var(--text-tertiary); margin-top:10px; line-height:1.6;}
+.checkbox-cell{text-align:center;}
+input[type=checkbox]{height:auto; width:16px; accent-color:var(--blue); cursor:pointer;}
+.toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:var(--text); color:#fff;
+  padding:10px 18px; border-radius:999px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .25s; box-shadow:var(--shadow);}
+.toast.show{opacity:1;}
+.empty{color:var(--text-tertiary); font-size:13px; padding:16px 0; font-style:italic;}
+.member-edit{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
+.loading{padding:60px 0; text-align:center; color:var(--text-tertiary); font-size:14px;}
+
+.setup-card{max-width:480px; margin:60px auto; background:var(--surface); border-radius:var(--r-xl); box-shadow:var(--shadow); padding:28px;}
+.setup-card h2{margin:0 0 6px; font-size:17px; font-weight:700; text-transform:none; letter-spacing:0; color:var(--text);}
+.setup-card p{font-size:13px; color:var(--text-secondary); line-height:1.6; margin:0 0 18px;}
+.setup-card .field{margin-bottom:14px;}
+.setup-card input{width:100%;}
+.gsi-btn{display:flex; align-items:center; justify-content:center; gap:10px; width:100%; height:44px; background:#fff; border:1px solid var(--divide-strong); border-radius:var(--r-md); cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:500; font-size:14px; color:var(--text);}
+.gsi-btn:hover{background:var(--surface2);}
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <div class="loading">Lade…</div>
+</div>
+<div class="toast" id="toast"></div>
+<div id="busy-overlay" style="display:none; position:fixed; inset:0; background:rgba(242,242,247,.65); backdrop-filter:blur(2px); z-index:1000; align-items:center; justify-content:center; flex-direction:column; gap:12px;">
+  <div style="width:28px; height:28px; border:3px solid var(--divide-strong); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite;"></div>
+  <div style="font-size:13px; color:var(--text-secondary); font-weight:500;" id="busy-label">Speichert…</div>
+</div>
+<div id="hang-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:1001; background:var(--red); color:#fff; padding:12px 20px; align-items:center; justify-content:center; gap:14px; font-size:13.5px; font-weight:500;">
+  <span>Die Verbindung zu Google Sheets hängt gerade. Bitte neu laden.</span>
+  <button class="btn" style="background:#fff; color:var(--red); height:30px; padding:0 14px;" onclick="location.reload()">Neu laden</button>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+
+<script>
+// ============ KONFIGURATION (wird einmalig lokal gespeichert) ============
+let CONFIG = JSON.parse(localStorage.getItem('karat_config') || 'null');
+
+// ============ Sheet-Struktur ============
+const SHEET_DEFS = {
+  Projekte:     ['id','name','traeger','budget','einnahmenBar','einnahmenShop'],
+  Buchungen:    ['id','projektId','datum','ausgabe','preis','kategorie','bezahltVon','zahlweg','belegnr','erstattet'],
+  Vereinskonto: ['id','datum','kategorie','beschreibung','betrag','typ','konto'],
+  Konten:       ['konto','anfang','tatsaechlich'],
+  Mitglieder:   ['name'],
+};
+const ACCOUNTS = ["Vereinskonto","PayPal","Barkasse"];
+const ACCOUNT_LABELS = { Vereinskonto:"Bankkonto", PayPal:"PayPal", Barkasse:"Barkasse" };
+const KATEGORIEN = ["Verbrauch","Kauf","Leihe","Anschaffung","Geschenk"];
+function accLabel(a){ return ACCOUNT_LABELS[a] || a; }
+const DEFAULT_MEMBERS = ["Julia","Gervas","Basti","Mitglied 4","Mitglied 5","Mitglied 6","Mitglied 7","Mitglied 8","Mitglied 9","Mitglied 10"];
+
+// ============ Auth ============
+let accessToken = null;
+let tokenClient = null;
+let userInfo = null;
+
+function initGis(){
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CONFIG.clientId,
+    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+    callback: async (resp) => {
+      if(resp.error){ showToast('Anmeldung fehlgeschlagen: '+resp.error); return; }
+      accessToken = resp.access_token;
+      try { userInfo = await apiFetch('https://www.googleapis.com/oauth2/v2/userinfo'); } catch(e){ userInfo = null; }
+      await boot();
+    },
+  });
+}
+function signIn(promptConsent){
+  tokenClient.requestAccessToken({ prompt: promptConsent ? 'consent' : '' });
+}
+function signOut(){
+  if(accessToken) google.accounts.oauth2.revoke(accessToken, ()=>{});
+  accessToken = null; userInfo = null;
+  renderSetupOrSignIn();
+}
+
+// ============ Low-level Sheets API ============
+const API_BASE = 'https://sheets.googleapis.com/v4/spreadsheets';
+let sheetIdCache = {};
+
+async function apiFetch(url, method, body){
+  const res = await fetch(url, {
+    method: method || 'GET',
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if(res.status === 401){
+    await new Promise(resolve=>{
+      tokenClient.callback = async (resp)=>{ accessToken = resp.access_token; resolve(); };
+      tokenClient.requestAccessToken({ prompt:'' });
+    });
+    return apiFetch(url, method, body);
+  }
+  const json = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error((json.error && json.error.message) || ('Sheets API Fehler ('+res.status+')'));
+  return json;
+}
+
+function colLetter(n){ let s=''; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26); } return s; }
+function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)).slice(0,12); }
+
+async function getSheetMeta(){
+  const meta = await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}?fields=sheets.properties`);
+  sheetIdCache = {};
+  meta.sheets.forEach(s=>{ sheetIdCache[s.properties.title] = s.properties.sheetId; });
+  return meta.sheets.map(s=>s.properties.title);
+}
+
+async function ensureSheets(){
+  const existing = await getSheetMeta();
+  const requests = [];
+  const toInit = [];
+  for(const name of Object.keys(SHEET_DEFS)){
+    if(!existing.includes(name)){ requests.push({ addSheet: { properties: { title: name } } }); toInit.push(name); }
+  }
+  if(requests.length){
+    await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}:batchUpdate`, 'POST', { requests });
+    await getSheetMeta();
+  }
+  for(const name of toInit){
+    const headers = SHEET_DEFS[name];
+    await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(name+'!A1')}?valueInputOption=RAW`, 'PUT', { values:[headers] });
+    if(name === 'Konten'){
+      await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent('Konten!A2')}?valueInputOption=RAW`, 'PUT',
+        { values: ACCOUNTS.map(a=>[a,0,0]) });
+    }
+    if(name === 'Mitglieder'){
+      await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent('Mitglieder!A2')}?valueInputOption=RAW`, 'PUT',
+        { values: DEFAULT_MEMBERS.map(m=>[m]) });
+    }
+  }
+}
+
+async function readSheet(name){
+  const headers = SHEET_DEFS[name];
+  const range = `${name}!A2:${colLetter(headers.length)}`;
+  const json = await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(range)}`);
+  const rows = json.values || [];
+  return rows.map((r,i)=>{
+    const o = { __row: i+2 };
+    headers.forEach((h,idx)=>{ o[h] = r[idx] !== undefined ? r[idx] : ''; });
+    return o;
+  }).filter(o => headers.some(h => o[h] !== '' && o[h] !== undefined));
+}
+
+async function appendRow(name, obj){
+  const headers = SHEET_DEFS[name];
+  const row = headers.map(h => obj[h] !== undefined ? obj[h] : '');
+  await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(name+'!A:A')}:append?valueInputOption=USER_ENTERED`, 'POST', { values:[row] });
+}
+
+async function updateRow(name, rowNumber, obj){
+  const headers = SHEET_DEFS[name];
+  const row = headers.map(h => obj[h] !== undefined ? obj[h] : '');
+  const range = `${name}!A${rowNumber}:${colLetter(headers.length)}${rowNumber}`;
+  await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`, 'PUT', { values:[row] });
+}
+
+async function deleteRows(name, rowNumbers){
+  if(!rowNumbers.length) return;
+  const sheetId = sheetIdCache[name];
+  const uniqueDesc = [...new Set(rowNumbers)].sort((a,b)=>b-a);
+  const requests = uniqueDesc.map(r => ({
+    deleteDimension: { range: { sheetId, dimension:'ROWS', startIndex:r-1, endIndex:r } }
+  }));
+  await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}:batchUpdate`, 'POST', { requests });
+}
+
+async function clearAndWrite(name, rowsOfValues){
+  const headers = SHEET_DEFS[name];
+  await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(name+'!A2:'+colLetter(headers.length)+'2000')}:clear`, 'POST', {});
+  if(rowsOfValues.length){
+    await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(name+'!A2')}?valueInputOption=USER_ENTERED`, 'PUT', { values: rowsOfValues });
+  }
+}
+
+// ============ App-State & Business-Logik ============
+let state = { projectsById:{}, vereinskonto:[], kontoRows:[], members:[] };
+let activeTab = 'dashboard';
+let activeProjectId = null;
+
+function eur(n){ n=+n||0; return n.toLocaleString('de-DE',{style:'currency',currency:'EUR'}); }
+function num(v){ const n=parseFloat(v); return isNaN(n)?0:n; }
+function esc(s){ return (s??'').toString().replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
+function truthy(v){ return v===true || v==='true' || v===1 || v==='TRUE'; }
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(showToast._h);
+  showToast._h=setTimeout(()=>t.classList.remove('show'),1800);
+}
+let busyCount = 0;
+function setBusy(isBusy, label){
+  busyCount += isBusy ? 1 : -1;
+  if(busyCount < 0) busyCount = 0;
+  const overlay = document.getElementById('busy-overlay');
+  if(label) document.getElementById('busy-label').textContent = label;
+  if(overlay) overlay.style.display = busyCount > 0 ? 'flex' : 'none';
+}
+async function withBusy(label, fn){
+  setBusy(true, label);
+  const timeoutId = setTimeout(()=>{ setBusy(false); document.getElementById('hang-banner').style.display='flex'; }, 20000);
+  try { const r = await fn(); clearTimeout(timeoutId); setBusy(false); return r; }
+  catch(err){ clearTimeout(timeoutId); setBusy(false); console.error(err); showToast('Fehler: '+(err.message||err)); throw err; }
+}
+
+async function refresh(){
+  const [projekteRaw, buchungenRaw, vkRaw, kontenRaw, mitgliederRaw] = await Promise.all([
+    readSheet('Projekte'), readSheet('Buchungen'), readSheet('Vereinskonto'), readSheet('Konten'), readSheet('Mitglieder'),
+  ]);
+  state.projectsById = {};
+  projekteRaw.forEach(p=>{ p.entries = buchungenRaw.filter(b=>String(b.projektId)===String(p.id)); state.projectsById[p.id]=p; });
+  state.vereinskonto = vkRaw;
+  state.kontoRows = kontenRaw;
+  state.members = mitgliederRaw.map(m=>m.name);
+  const ids = Object.keys(state.projectsById);
+  if(ids.length && !state.projectsById[activeProjectId]) activeProjectId = ids[0];
+}
+function kontoRow(a){ return state.kontoRows.find(k=>k.konto===a) || {anfang:0, tatsaechlich:0, __row:null}; }
+
+// ---------- Ableitungen ----------
+function pEinnahmen(p){ return num(p.einnahmenBar)+num(p.einnahmenShop); }
+function pAusgaben(p){ return (p.entries||[]).reduce((s,e)=>s+num(e.preis),0); }
+function pDifferenz(p){ return pEinnahmen(p)-pAusgaben(p); }
+function pByKonto(p, konto){ return (p.entries||[]).filter(e=>e.bezahltVon==='ausgeglichen' && e.zahlweg===konto).reduce((s,e)=>s+num(e.preis),0); }
+function pByPerson(p, member){ return (p.entries||[]).filter(e=>e.bezahltVon===member).reduce((s,e)=>s+num(e.preis),0); }
+function pByPersonOffen(p, member){ return (p.entries||[]).filter(e=>e.bezahltVon===member && !truthy(e.erstattet)).reduce((s,e)=>s+num(e.preis),0); }
+
+function vkFiltered(konto){ return state.vereinskonto.filter(e => (e.konto || 'Vereinskonto') === konto); }
+function vkEinnahmenKonto(konto){ return vkFiltered(konto).filter(e=>e.typ==='Einnahme').reduce((s,e)=>s+num(e.betrag),0); }
+function vkAusgabenKonto(konto){ return vkFiltered(konto).filter(e=>e.typ==='Ausgabe').reduce((s,e)=>s+num(e.betrag),0); }
+function vkEinnahmenAll(){ return state.vereinskonto.filter(e=>e.typ==='Einnahme').reduce((s,e)=>s+num(e.betrag),0); }
+function vkAusgabenAll(){ return state.vereinskonto.filter(e=>e.typ==='Ausgabe').reduce((s,e)=>s+num(e.betrag),0); }
+
+function kontoStand(konto){
+  const settings = kontoRow(konto);
+  const projects = Object.values(state.projectsById);
+  let zugang=0, abgang=0;
+  if(konto==='Barkasse'){ zugang = projects.reduce((s,p)=>s+num(p.einnahmenBar),0) + vkEinnahmenKonto('Barkasse'); abgang = projects.reduce((s,p)=>s+pByKonto(p,'Barkasse'),0) + vkAusgabenKonto('Barkasse'); }
+  else if(konto==='PayPal'){ zugang = projects.reduce((s,p)=>s+num(p.einnahmenShop),0) + vkEinnahmenKonto('PayPal'); abgang = projects.reduce((s,p)=>s+pByKonto(p,'PayPal'),0) + vkAusgabenKonto('PayPal'); }
+  else if(konto==='Vereinskonto'){ zugang = vkEinnahmenKonto('Vereinskonto'); abgang = vkAusgabenKonto('Vereinskonto') + projects.reduce((s,p)=>s+pByKonto(p,'Vereinskonto'),0); }
+  const endbestand = num(settings.anfang)+zugang-abgang;
+  return {anfang:num(settings.anfang), zugang, abgang, endbestand, tatsaechlich:num(settings.tatsaechlich)};
+}
+
+function memberTotals(member){
+  const projects = Object.values(state.projectsById);
+  const gesamt = projects.reduce((s,p)=>s+pByPerson(p,member),0);
+  const offen = projects.reduce((s,p)=>s+pByPersonOffen(p,member),0);
+  return {gesamt, offen, erstattet: gesamt-offen};
+}
+
+// ---------- Rendering ----------
+const TABS = [
+  {id:'dashboard', label:'Gesamtbilanz'},
+  {id:'projekte', label:'Projekte'},
+  {id:'kontobewegungen', label:'Kontobewegungen'},
+  {id:'kontenuebersicht', label:'Kontenübersicht'},
+  {id:'verrechnung', label:'Verrechnung'},
+  {id:'mitglieder', label:'Mitglieder'},
+];
+
+function renderApp(){
+  const p = document.getElementById('page');
+  p.innerHTML = `
+    <header class="top">
+      <div class="wordmark">
+        <div class="wordmark-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></div>
+        <div><h1>Studio Karat</h1><div class="kicker">Buchhaltung</div></div>
+      </div>
+      <div class="account-pill">
+        ${userInfo && userInfo.picture ? `<img src="${userInfo.picture}">` : ''}
+        <span>${userInfo ? esc(userInfo.email) : ''}</span>
+        <button class="btn ghost small" onclick="signOut()">Abmelden</button>
+      </div>
+    </header>
+    <nav class="tabs" id="tabs"></nav>
+    <div id="content"></div>`;
+  renderTabs();
+  renderContent();
+}
+
+function renderTabs(){
+  const nav = document.getElementById('tabs');
+  nav.innerHTML = TABS.map(t=>`<button class="${activeTab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
+  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{ activeTab=b.dataset.tab; renderContent(); });
+}
+
+function renderContent(){
+  const c = document.getElementById('content');
+  if(activeTab==='dashboard') c.innerHTML = renderDashboard();
+  else if(activeTab==='projekte') c.innerHTML = renderProjekte();
+  else if(activeTab==='kontobewegungen') c.innerHTML = renderKontobewegungen();
+  else if(activeTab==='kontenuebersicht') c.innerHTML = renderKontenuebersicht();
+  else if(activeTab==='verrechnung') c.innerHTML = renderVerrechnung();
+  else if(activeTab==='mitglieder') c.innerHTML = renderMitglieder();
+  bindEvents();
+}
+
+function renderDashboard(){
+  const projects = Object.values(state.projectsById);
+  const totalEinnahmen = projects.reduce((s,p)=>s+pEinnahmen(p),0) + vkEinnahmenAll();
+  const totalAusgaben = projects.reduce((s,p)=>s+pAusgaben(p),0) + vkAusgabenAll();
+  const diff = totalEinnahmen-totalAusgaben;
+  const rows = projects.map(p=>`
+    <tr><td>${esc(p.name)}</td>
+      <td class="num pos">${eur(pEinnahmen(p))}</td>
+      <td class="num neg">${eur(pAusgaben(p))}</td>
+      <td class="num ${pDifferenz(p)>=0?'pos':'neg'}">${eur(pDifferenz(p))}</td></tr>`).join('');
+  const konten = ACCOUNTS.map(a=>{
+    const k = kontoStand(a);
+    return `<div class="kpi"><div class="label">${accLabel(a)}</div><div class="value ${k.endbestand>=0?'pos':'neg'}">${eur(k.endbestand)}</div></div>`;
+  }).join('');
+  return `
+    <div class="grid cols-3" style="margin-bottom:16px;">
+      <div class="kpi"><div class="label">Einnahmen gesamt</div><div class="value pos">${eur(totalEinnahmen)}</div></div>
+      <div class="kpi"><div class="label">Ausgaben gesamt</div><div class="value neg">${eur(totalAusgaben)}</div></div>
+      <div class="kpi"><div class="label">Jahresergebnis</div><div class="value ${diff>=0?'pos':'neg'}">${eur(diff)}</div></div>
+    </div>
+    <div class="card">
+      <h2>Projekte im Überblick</h2>
+      ${projects.length? `<table><thead><tr><th>Projekt</th><th>Einnahmen</th><th>Ausgaben</th><th>Differenz</th></tr></thead>
+      <tbody>${rows}
+      <tr class="total"><td>Kontobewegungen (Miete, Fixkosten, Barbewegungen etc.)</td>
+        <td class="num pos">${eur(vkEinnahmenAll())}</td><td class="num neg">${eur(vkAusgabenAll())}</td>
+        <td class="num ${vkEinnahmenAll()-vkAusgabenAll()>=0?'pos':'neg'}">${eur(vkEinnahmenAll()-vkAusgabenAll())}</td></tr>
+      </tbody></table>` : `<div class="empty">Noch keine Projekte angelegt. Los geht's im Tab „Projekte".</div>`}
+    </div>
+    <div class="card">
+      <h2>Liquidität</h2>
+      <div class="grid cols-3">${konten}</div>
+      <div class="hint">Endbestand = Anfangsbestand + Zugänge − Abgänge. Details im Tab „Kontenübersicht".</div>
+    </div>`;
+}
+
+function renderProjekte(){
+  const ids = Object.keys(state.projectsById);
+  if(!activeProjectId || !state.projectsById[activeProjectId]) activeProjectId = ids[0] || null;
+  const chips = ids.map(id=>`<div class="proj-chip ${id===activeProjectId?'active':''}" data-pid="${id}">${esc(state.projectsById[id].name)}</div>`).join('');
+  let detail = '<div class="empty">Kein Projekt ausgewählt. Lege oben ein neues an.</div>';
+  if(activeProjectId){
+    const p = state.projectsById[activeProjectId];
+    const entryRows = (p.entries||[]).map(e=>`
+      <tr>
+        <td>${esc(e.datum||'')}</td><td>${esc(e.ausgabe||'')}</td>
+        <td class="num neg">${eur(e.preis)}</td><td>${esc(e.kategorie||'')}</td>
+        <td>${e.bezahltVon==='ausgeglichen' ? '<span class="badge settled">ausgeglichen</span>' : `<span class="badge person">${esc(e.bezahltVon)}</span>`}</td>
+        <td>${e.zahlweg? accLabel(e.zahlweg): ''}</td><td>${esc(e.belegnr||'')}</td>
+        <td class="checkbox-cell">${e.bezahltVon!=='ausgeglichen' ? `<input type="checkbox" data-entry-erstattet="${e.id}" ${truthy(e.erstattet)?'checked':''}>` : '—'}</td>
+        <td><button class="btn danger small" data-del-entry="${e.id}">×</button></td>
+      </tr>`).join('');
+    const kontoRows = ACCOUNTS.map(a=>`<tr><td>${accLabel(a)}</td><td class="num neg">${eur(pByKonto(p,a))}</td></tr>`).join('');
+    const personRows = state.members.filter(m=>pByPerson(p,m)>0).map(m=>`<tr><td>${esc(m)}</td><td class="num">${eur(pByPerson(p,m))}</td></tr>`).join('') || '<tr><td colspan="2" class="empty">Niemand hat bisher privat ausgelegt.</td></tr>';
+    detail = `
+      <div class="card">
+        <div class="grid cols-2">
+          <div class="field"><label>Titel</label><input type="text" class="wide" id="p-name" value="${escAttr(p.name)}"></div>
+          <div class="field"><label>Projektträger</label><input type="text" class="wide" id="p-traeger" value="${escAttr(p.traeger)}"></div>
+        </div>
+        <div class="grid cols-3" style="margin-top:12px;">
+          <div class="field"><label>Budget (€)</label><input type="number" step="0.01" class="num-in" id="p-budget" value="${p.budget||0}"></div>
+          <div class="field"><label>Einnahmen Bar (€)</label><input type="number" step="0.01" class="num-in" id="p-bar" value="${p.einnahmenBar||0}"></div>
+          <div class="field"><label>Einnahmen Shop/PayPal (€)</label><input type="number" step="0.01" class="num-in" id="p-shop" value="${p.einnahmenShop||0}"></div>
+        </div>
+        <div class="row-form">
+          <button class="btn ghost" id="p-save-meta">Angaben speichern</button>
+          <button class="btn danger" id="p-delete" style="margin-left:auto;">Projekt löschen</button>
+        </div>
+        <div class="grid cols-3" style="margin-top:18px;">
+          <div class="kpi"><div class="label">Einnahmen</div><div class="value pos">${eur(pEinnahmen(p))}</div></div>
+          <div class="kpi"><div class="label">Ausgaben</div><div class="value neg">${eur(pAusgaben(p))}</div></div>
+          <div class="kpi"><div class="label">Restbudget</div><div class="value ${pDifferenz(p)>=0?'pos':'neg'}">${eur(pDifferenz(p))}</div></div>
+        </div>
+        <h3>Buchungen</h3>
+        <table><thead><tr><th>Datum</th><th>Ausgabe</th><th>Preis</th><th>Kategorie</th><th>Bezahlt von</th><th>Zahlweg</th><th>Beleg-Nr.</th><th>Erstattet</th><th></th></tr></thead>
+        <tbody>${entryRows || '<tr><td colspan="9" class="empty">Noch keine Buchungen.</td></tr>'}</tbody></table>
+        <div class="row-form" id="entry-form">
+          <div class="field"><label>Datum</label><input type="date" id="e-datum"></div>
+          <div class="field"><label>Ausgabe</label><input type="text" class="wide" id="e-ausgabe" placeholder="z.B. Getränke"></div>
+          <div class="field"><label>Preis €</label><input type="number" step="0.01" class="num-in" id="e-preis"></div>
+          <div class="field"><label>Kategorie</label><select id="e-kategorie">${KATEGORIEN.map(k=>`<option>${k}</option>`).join('')}</select></div>
+          <div class="field"><label>Bezahlt von</label><select id="e-bezahltvon">
+            <option value="ausgeglichen">ausgeglichen</option>
+            ${state.members.map(m=>`<option value="${escAttr(m)}">${esc(m)}</option>`).join('')}
+          </select></div>
+          <div class="field"><label>Zahlweg (falls ausgeglichen)</label><select id="e-zahlweg"><option value="">–</option>${ACCOUNTS.map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
+          <div class="field"><label>Beleg-Nr.</label><input type="text" id="e-belegnr" style="width:90px;"></div>
+          <button class="btn" id="e-add">+ Buchung</button>
+        </div>
+        <div class="grid cols-2" style="margin-top:18px;">
+          <div><h3>Nach Konto (Ausgaben)</h3><table><thead><tr><th>Konto</th><th>Ausgaben</th></tr></thead><tbody>${kontoRows}</tbody></table></div>
+          <div><h3>Nach Person (privat ausgelegt)</h3><table><thead><tr><th>Person</th><th>Ausgelegt</th></tr></thead><tbody>${personRows}</tbody></table></div>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="card">
+      <h2>Projekte</h2>
+      <div class="proj-list">${chips}</div>
+      <div class="row-form">
+        <div class="field"><label>Neues Projekt</label><input type="text" class="wide" id="new-proj-name" placeholder="Projekttitel"></div>
+        <button class="btn" id="new-proj-add">+ Projekt anlegen</button>
+      </div>
+    </div>
+    ${detail}`;
+}
+
+function renderKontobewegungen(){
+  const rows = state.vereinskonto.map(e=>`
+    <tr><td>${esc(e.datum||'')}</td><td>${accLabel(e.konto||'Vereinskonto')}</td><td>${esc(e.kategorie||'')}</td><td>${esc(e.beschreibung||'')}</td>
+      <td class="num ${e.typ==='Einnahme'?'pos':'neg'}">${eur(e.betrag)}</td><td>${e.typ}</td>
+      <td><button class="btn danger small" data-del-vk="${e.id}">×</button></td></tr>`).join('');
+  return `
+    <div class="grid cols-3" style="margin-bottom:16px;">
+      <div class="kpi"><div class="label">Einnahmen gesamt</div><div class="value pos">${eur(vkEinnahmenAll())}</div></div>
+      <div class="kpi"><div class="label">Ausgaben gesamt</div><div class="value neg">${eur(vkAusgabenAll())}</div></div>
+      <div class="kpi"><div class="label">Saldo</div><div class="value ${vkEinnahmenAll()-vkAusgabenAll()>=0?'pos':'neg'}">${eur(vkEinnahmenAll()-vkAusgabenAll())}</div></div>
+    </div>
+    <div class="card">
+      <h2>Kontobewegungen</h2>
+      <div class="hint">Für alles, was nicht direkt über ein Projekt läuft: Mietanteile & Fixkosten übers Bankkonto, Wechselgeld/Entnahmen bei der Barkasse, gelegentliche Restbudget-Einzahlungen aus einem Projekt.</div>
+      <table><thead><tr><th>Datum</th><th>Konto</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th><th>Typ</th><th></th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="7" class="empty">Noch keine Einträge.</td></tr>'}</tbody></table>
+      <div class="row-form">
+        <div class="field"><label>Datum</label><input type="date" id="vk-datum"></div>
+        <div class="field"><label>Konto</label><select id="vk-konto">${ACCOUNTS.map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
+        <div class="field"><label>Kategorie</label><input type="text" id="vk-kategorie" placeholder="Mietanteil / Fixkosten / Transfer" style="width:180px;"></div>
+        <div class="field"><label>Beschreibung</label><input type="text" class="wide" id="vk-beschreibung"></div>
+        <div class="field"><label>Betrag €</label><input type="number" step="0.01" class="num-in" id="vk-betrag"></div>
+        <div class="field"><label>Typ</label><select id="vk-typ"><option>Einnahme</option><option>Ausgabe</option></select></div>
+        <button class="btn" id="vk-add">+ Eintrag</button>
+      </div>
+    </div>`;
+}
+
+function renderKontenuebersicht(){
+  const rows = ACCOUNTS.map(a=>{
+    const k = kontoStand(a);
+    const diff = k.tatsaechlich - k.endbestand;
+    return `<tr><td>${accLabel(a)}</td>
+      <td><input type="number" step="0.01" class="num-in" data-konto-anfang="${a}" value="${k.anfang}" style="width:105px;"></td>
+      <td class="num pos">${eur(k.zugang)}</td><td class="num neg">${eur(k.abgang)}</td>
+      <td class="num ${k.endbestand>=0?'pos':'neg'}">${eur(k.endbestand)}</td>
+      <td><input type="number" step="0.01" class="num-in" data-konto-tat="${a}" value="${k.tatsaechlich}" style="width:105px;"></td>
+      <td class="num ${Math.abs(diff)<0.005?'pos':'neg'}">${eur(diff)}</td></tr>`;
+  }).join('');
+  return `
+    <div class="card">
+      <h2>Kontenübersicht / Liquidität</h2>
+      <table><thead><tr><th>Konto</th><th>Anfangsbestand</th><th>Zugänge</th><th>Abgänge</th><th>Endbestand</th><th>Tatsächl. Kontostand</th><th>Differenz</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+      <div class="row-form"><button class="btn ghost" id="konto-save">Kontostände speichern</button></div>
+      <div class="hint">Anfangsbestand und tatsächlicher Kontostand trägst du manuell ein. Zugänge/Abgänge berechnen sich automatisch.</div>
+    </div>`;
+}
+
+function renderVerrechnung(){
+  const rows = state.members.map(m=>{
+    const t = memberTotals(m);
+    return `<tr><td>${esc(m)}</td><td class="num">${eur(t.gesamt)}</td><td class="num ${t.offen>0?'neg':''}">${eur(t.offen)}</td><td class="num pos">${eur(t.erstattet)}</td></tr>`;
+  }).join('');
+  const totalOffen = state.members.reduce((s,m)=>s+memberTotals(m).offen,0);
+  return `
+    <div class="card">
+      <h2>Verrechnung Mitglieder (Auslagen)</h2>
+      <div class="hint">„Erstattet" wird pro Buchung im jeweiligen Projekt-Tab abgehakt.</div>
+      <table><thead><tr><th>Mitglied</th><th>Ausgelegt gesamt</th><th>davon offen</th><th>davon erstattet</th></tr></thead>
+      <tbody>${rows}<tr class="total"><td>Gesamt offen</td><td></td><td class="num neg">${eur(totalOffen)}</td><td></td></tr></tbody></table>
+    </div>`;
+}
+
+function renderMitglieder(){
+  const rows = state.members.map((m,i)=>`
+    <div class="member-edit">
+      <input type="text" data-member-idx="${i}" value="${escAttr(m)}" style="min-width:180px;">
+      <button class="btn danger small" data-del-member="${i}">×</button>
+    </div>`).join('');
+  return `
+    <div class="card">
+      <h2>Mitglieder</h2>
+      <div class="hint">Namen anpassen. Bereits gebuchte Einträge behalten den alten Namen als Text.</div>
+      ${rows}
+      <div class="row-form">
+        <div class="field"><label>Neues Mitglied</label><input type="text" id="new-member-name" style="min-width:180px;"></div>
+        <button class="btn" id="add-member">+ Hinzufügen</button>
+      </div>
+      <div class="row-form"><button class="btn ghost" id="save-members">Namen speichern</button></div>
+    </div>`;
+}
+
+// ---------- Events ----------
+function bindEvents(){
+  document.querySelectorAll('[data-pid]').forEach(el=>el.onclick=()=>{ activeProjectId = el.dataset.pid; renderContent(); });
+
+  const newProjBtn = document.getElementById('new-proj-add');
+  if(newProjBtn) newProjBtn.onclick = async ()=>{
+    const name = document.getElementById('new-proj-name').value.trim();
+    if(!name) return;
+    await withBusy('Speichert…', async ()=>{
+      await appendRow('Projekte', {id:uid(), name, traeger:'Studio Karat', budget:0, einnahmenBar:0, einnahmenShop:0});
+      await refresh();
+    });
+    renderContent();
+  };
+  const saveMetaBtn = document.getElementById('p-save-meta');
+  if(saveMetaBtn) saveMetaBtn.onclick = async ()=>{
+    const p = state.projectsById[activeProjectId];
+    const updated = {
+      id: p.id,
+      name: document.getElementById('p-name').value.trim(),
+      traeger: document.getElementById('p-traeger').value.trim(),
+      budget: num(document.getElementById('p-budget').value),
+      einnahmenBar: num(document.getElementById('p-bar').value),
+      einnahmenShop: num(document.getElementById('p-shop').value),
+    };
+    await withBusy('Speichert…', async ()=>{ await updateRow('Projekte', p.__row, updated); await refresh(); });
+    renderContent(); showToast('Gespeichert');
+  };
+  const delProjBtn = document.getElementById('p-delete');
+  if(delProjBtn) delProjBtn.onclick = async ()=>{
+    if(!confirm('Projekt wirklich löschen?')) return;
+    const p = state.projectsById[activeProjectId];
+    const entryRows = (p.entries||[]).map(e=>e.__row);
+    await withBusy('Löscht…', async ()=>{
+      await deleteRows('Buchungen', entryRows);
+      await deleteRows('Projekte', [p.__row]);
+      await refresh();
+    });
+    activeProjectId = null;
+    renderContent();
+  };
+  const addEntryBtn = document.getElementById('e-add');
+  if(addEntryBtn) addEntryBtn.onclick = async ()=>{
+    const bezahltVon = document.getElementById('e-bezahltvon').value;
+    const preis = num(document.getElementById('e-preis').value);
+    const ausgabe = document.getElementById('e-ausgabe').value.trim();
+    if(!ausgabe || !preis){ showToast('Bitte Ausgabe und Preis angeben'); return; }
+    const entry = {
+      id: uid(), projektId: activeProjectId,
+      datum: document.getElementById('e-datum').value,
+      ausgabe, preis,
+      kategorie: document.getElementById('e-kategorie').value,
+      bezahltVon,
+      zahlweg: bezahltVon==='ausgeglichen' ? document.getElementById('e-zahlweg').value : '',
+      belegnr: document.getElementById('e-belegnr').value.trim(),
+      erstattet:false,
+    };
+    await withBusy('Speichert…', async ()=>{ await appendRow('Buchungen', entry); await refresh(); });
+    renderContent();
+  };
+  document.querySelectorAll('[data-del-entry]').forEach(el=>el.onclick=async()=>{
+    const p = state.projectsById[activeProjectId];
+    const entry = (p.entries||[]).find(e=>e.id===el.dataset.delEntry);
+    await withBusy('Löscht…', async ()=>{ await deleteRows('Buchungen', [entry.__row]); await refresh(); });
+    renderContent();
+  });
+  document.querySelectorAll('[data-entry-erstattet]').forEach(el=>el.onchange=async()=>{
+    const p = state.projectsById[activeProjectId];
+    const entry = (p.entries||[]).find(e=>e.id===el.dataset.entryErstattet);
+    const updated = Object.assign({}, entry, { erstattet: el.checked });
+    await withBusy('Speichert…', async ()=>{ await updateRow('Buchungen', entry.__row, updated); await refresh(); });
+    renderContent();
+  });
+
+  const vkAdd = document.getElementById('vk-add');
+  if(vkAdd) vkAdd.onclick = async ()=>{
+    const beschreibung = document.getElementById('vk-beschreibung').value.trim();
+    const betrag = num(document.getElementById('vk-betrag').value);
+    if(!beschreibung || !betrag){ showToast('Bitte Beschreibung und Betrag angeben'); return; }
+    const entry = {
+      id: uid(),
+      datum: document.getElementById('vk-datum').value,
+      konto: document.getElementById('vk-konto').value,
+      kategorie: document.getElementById('vk-kategorie').value.trim(),
+      beschreibung, betrag,
+      typ: document.getElementById('vk-typ').value,
+    };
+    await withBusy('Speichert…', async ()=>{ await appendRow('Vereinskonto', entry); await refresh(); });
+    renderContent();
+  };
+  document.querySelectorAll('[data-del-vk]').forEach(el=>el.onclick=async()=>{
+    const entry = state.vereinskonto.find(e=>e.id===el.dataset.delVk);
+    await withBusy('Löscht…', async ()=>{ await deleteRows('Vereinskonto', [entry.__row]); await refresh(); });
+    renderContent();
+  });
+
+  const kontoSaveBtn = document.getElementById('konto-save');
+  if(kontoSaveBtn) kontoSaveBtn.onclick = async ()=>{
+    await withBusy('Speichert…', async ()=>{
+      for(const a of ACCOUNTS){
+        const row = kontoRow(a);
+        const anfang = num(document.querySelector(`[data-konto-anfang="${a}"]`).value);
+        const tatsaechlich = num(document.querySelector(`[data-konto-tat="${a}"]`).value);
+        await updateRow('Konten', row.__row, { konto:a, anfang, tatsaechlich });
+      }
+      await refresh();
+    });
+    renderContent(); showToast('Gespeichert');
+  };
+
+  const addMemberBtn = document.getElementById('add-member');
+  if(addMemberBtn) addMemberBtn.onclick = async ()=>{
+    const val = document.getElementById('new-member-name').value.trim();
+    if(!val) return;
+    const names = [...state.members, val];
+    await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
+    renderContent();
+  };
+  document.querySelectorAll('[data-del-member]').forEach(el=>el.onclick=async()=>{
+    const names = state.members.filter((_,i)=>i!==+el.dataset.delMember);
+    await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
+    renderContent();
+  });
+  const saveMembersBtn = document.getElementById('save-members');
+  if(saveMembersBtn) saveMembersBtn.onclick = async ()=>{
+    const names = state.members.map((_,i)=>document.querySelector(`[data-member-idx="${i}"]`).value.trim());
+    await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
+    renderContent(); showToast('Gespeichert');
+  };
+}
+
+// ============ Setup- / Sign-in-Screens ============
+function renderSetupForm(){
+  document.getElementById('page').innerHTML = `
+    <div class="setup-card">
+      <h2>Einrichtung</h2>
+      <p>Einmalig einrichten. Diese Angaben werden nur lokal in diesem Browser gespeichert, nicht irgendwo hochgeladen.</p>
+      <div class="field"><label>OAuth Client-ID (aus Google Cloud Console)</label><input type="text" id="cfg-client" placeholder="123456789-abc...apps.googleusercontent.com"></div>
+      <div class="field"><label>Google Sheet ID (aus der Sheets-URL)</label><input type="text" id="cfg-sheet" placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz..."></div>
+      <button class="btn" style="width:100%;" id="cfg-save">Speichern & verbinden</button>
+    </div>`;
+  document.getElementById('cfg-save').onclick = ()=>{
+    const clientId = document.getElementById('cfg-client').value.trim();
+    const spreadsheetId = document.getElementById('cfg-sheet').value.trim();
+    if(!clientId || !spreadsheetId){ showToast('Bitte beide Felder ausfüllen'); return; }
+    CONFIG = { clientId, spreadsheetId };
+    localStorage.setItem('karat_config', JSON.stringify(CONFIG));
+    initGis();
+    renderSetupOrSignIn();
+  };
+}
+
+function renderSignIn(){
+  document.getElementById('page').innerHTML = `
+    <div class="setup-card">
+      <h2>Anmelden</h2>
+      <p>Meldet dich mit deinem Google-Konto an, damit die App auf das gemeinsame Sheet zugreifen kann.</p>
+      <button class="gsi-btn" id="signin-btn">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.4 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.6c-.5 3-2.2 5.5-4.6 7.2l7.4 5.7c4.3-4 6.8-9.9 6.8-17.4z"/><path fill="#FBBC05" d="M10.5 19.3c-.5 1.4-.8 3-.8 4.7s.3 3.3.8 4.7l-7.9 6.1C1 31.4 0 27.8 0 24s1-7.4 2.6-10.8l7.9 6.1z"/><path fill="#34A853" d="M24 48c6.4 0 11.8-2.1 15.7-5.8l-7.4-5.7c-2.1 1.4-4.8 2.2-8.3 2.2-6.3 0-11.6-3.5-13.5-9.6l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+        Mit Google anmelden
+      </button>
+      <p style="margin-top:14px;"><a href="#" id="reset-config" style="color:var(--text-tertiary); font-size:12px;">Einrichtung zurücksetzen</a></p>
+    </div>`;
+  document.getElementById('signin-btn').onclick = ()=> signIn(false);
+  document.getElementById('reset-config').onclick = (e)=>{ e.preventDefault(); localStorage.removeItem('karat_config'); CONFIG=null; renderSetupOrSignIn(); };
+}
+
+function renderSetupOrSignIn(){
+  if(!CONFIG){ renderSetupForm(); return; }
+  if(!tokenClient) initGis();
+  if(!accessToken){ renderSignIn(); return; }
+  renderApp();
+}
+
+async function boot(){
+  document.getElementById('page').innerHTML = '<div class="loading">Lade Daten…</div>';
+  try{
+    await ensureSheets();
+    await refresh();
+    renderApp();
+  } catch(err){
+    console.error(err);
+    document.getElementById('page').innerHTML = `<div class="setup-card"><h2>Fehler beim Laden</h2><p>${esc(err.message||err)}</p><button class="btn" onclick="location.reload()">Neu laden</button></div>`;
+  }
+}
+
+renderSetupOrSignIn();
+</script>
+</body>
+</html>
