@@ -14,6 +14,7 @@
   --blue:#007aff; --blue-bg:rgba(0,122,255,.09);
   --green:#2f9e52; --green-bg:rgba(47,158,82,.1);
   --red:#ff3b30; --red-bg:rgba(255,59,48,.08);
+  --orange:#c46a00; --orange-bg:rgba(255,149,0,.13);
   --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px;
   --ease:cubic-bezier(.4,0,.2,1);
   --shadow:0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
@@ -23,7 +24,7 @@
 body{margin:0; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif;
   font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; min-height:100vh;}
 .mono{font-family:'DM Mono',monospace;}
-.page{max-width:1060px; margin:0 auto; padding:28px 20px 72px;}
+.page{max-width:1180px; margin:0 auto; padding:28px 20px 72px;}
 
 header.top{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:22px; flex-wrap:wrap;}
 .wordmark{display:flex; align-items:center; gap:12px;}
@@ -31,96 +32,153 @@ header.top{display:flex; align-items:center; justify-content:space-between; gap:
 .wordmark-icon svg{width:18px; height:18px;}
 h1{font-size:19px; font-weight:700; margin:0; letter-spacing:-.02em;}
 .kicker{font-size:12px; font-weight:600; color:var(--blue); text-transform:uppercase; letter-spacing:.06em; margin-top:1px;}
-.account-pill{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-secondary); background:var(--surface); border-radius:999px; padding:6px 6px 6px 12px; box-shadow:var(--shadow);}
+.account-pill{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-secondary); background:var(--surface); border-radius:999px; padding:6px 6px 6px 12px; box-shadow:var(--shadow); flex-wrap:wrap;}
 .account-pill img{width:22px; height:22px; border-radius:50%;}
+.account-pill select{height:30px; font-size:12.5px; padding:0 28px 0 10px; border-radius:999px;}
 
-nav.tabs{display:flex; gap:4px; background:var(--surface2); border-radius:999px; padding:4px; margin-bottom:20px; flex-wrap:wrap; width:fit-content; max-width:100%;}
+.navrow{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:20px;}
+nav.tabs{display:flex; gap:4px; background:#e5e5ea; border-radius:999px; padding:4px; flex-wrap:wrap; width:fit-content; max-width:100%;}
 nav.tabs button{font-family:'DM Sans',sans-serif; font-weight:500; font-size:13px; background:transparent; border:none;
-  padding:9px 17px; cursor:pointer; border-radius:999px; color:var(--text-secondary); transition:all .15s var(--ease); white-space:nowrap;}
+  padding:9px 15px; cursor:pointer; border-radius:999px; color:var(--text-secondary); transition:all .15s var(--ease); white-space:nowrap;}
 nav.tabs button:hover{color:var(--text);}
 nav.tabs button.active{background:var(--blue); color:#fff; font-weight:600; box-shadow:0 2px 6px rgba(0,122,255,.35);}
+.yearpick{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-secondary); font-weight:500;}
+.yearpick select{height:34px; border-radius:999px; background-color:var(--surface); font-weight:600;}
 
 .card{background:var(--surface); border-radius:var(--r-xl); box-shadow:var(--shadow); padding:24px; margin-bottom:18px;}
 .card h2{font-size:11px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--text-secondary); margin:0 0 16px;}
 .card h3{font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text-secondary); margin:22px 0 10px;}
+.card-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;}
+.card-head h2{margin-bottom:12px;}
 
 .grid{display:grid; gap:16px;}
+.grid.cols-4{grid-template-columns:repeat(4,1fr);}
 .grid.cols-3{grid-template-columns:repeat(3,1fr);}
 .grid.cols-2{grid-template-columns:repeat(2,1fr);}
+@media(max-width:860px){.grid.cols-4{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:720px){.grid.cols-3,.grid.cols-2{grid-template-columns:1fr;}}
 
 .kpi{background:var(--surface); border-radius:var(--r-lg); box-shadow:var(--shadow); padding:18px 20px;}
+.card .kpi{background:var(--surface2); box-shadow:none;}
 .kpi .label{font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary);}
-.kpi .value{font-family:'DM Sans',sans-serif; font-variant-numeric:tabular-nums; font-size:23px; font-weight:600; margin-top:6px; color:var(--text);}
+.kpi .value{font-variant-numeric:tabular-nums; font-size:23px; font-weight:600; margin-top:6px; color:var(--text);}
+.kpi .sub{font-size:12px; color:var(--text-secondary); margin-top:2px;}
 .kpi .value.pos{color:var(--green);} .kpi .value.neg{color:var(--red);}
+.kpi.clickable{cursor:pointer;} .kpi.clickable:hover{outline:2px solid var(--blue-bg);}
 
+.tablewrap{overflow-x:auto; margin:0 -4px; padding:0 4px;}
 table{width:100%; border-collapse:collapse; font-size:13.5px;}
-th{text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary); border-bottom:1px solid var(--divide-strong); padding:9px 10px;}
-td{padding:11px 10px; border-bottom:1px solid var(--divide); vertical-align:middle;}
+th{text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary); border-bottom:1px solid var(--divide-strong); padding:9px 10px; white-space:nowrap;}
+td{padding:10px 10px; border-bottom:1px solid var(--divide); vertical-align:middle;}
 tr:last-child td{border-bottom:none;}
 tr.total td{font-weight:600; border-top:1px solid var(--divide-strong); border-bottom:none;}
-.num{font-family:'DM Sans',sans-serif; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;}
+tr.sub td{color:var(--text-secondary); font-style:italic;}
+tr.storno td{opacity:.45;} tr.storno td.desc{text-decoration:line-through;}
+tr.editing td{background:var(--blue-bg);}
+th.num{text-align:right;}
+.num{font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;}
 .num.pos{color:var(--green);} .num.neg{color:var(--red);}
+td.nr{font-family:'DM Mono',monospace; font-size:12.5px; color:var(--text-secondary); white-space:nowrap;}
+td.date{white-space:nowrap;}
+td.desc .small{display:block; font-size:12px; color:var(--text-secondary);}
 
-.badge{display:inline-flex; align-items:center; padding:3px 9px; border-radius:999px; font-size:12px; font-weight:500;}
+.badge{display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; font-size:11.5px; font-weight:500; white-space:nowrap;}
 .badge.settled{background:var(--green-bg); color:var(--green);}
 .badge.person{background:var(--blue-bg); color:var(--blue);}
+.badge.warn{background:var(--orange-bg); color:var(--orange);}
+.badge.grey{background:var(--surface2); color:var(--text-secondary);}
+.badge.red{background:var(--red-bg); color:var(--red);}
 
 .row-form{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-top:14px;}
-.field{display:flex; flex-direction:column; gap:6px;}
+.form-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px; margin-top:14px; align-items:end;}
+.form-grid .span2{grid-column:span 2;}
+@media(max-width:520px){.form-grid .span2{grid-column:auto;}}
+.field{display:flex; flex-direction:column; gap:6px; min-width:0;}
 .field label{font-size:11.5px; font-weight:500; color:var(--text-secondary);}
 input,select{
-  height:var(--field-h); box-sizing:border-box;
+  height:var(--field-h); box-sizing:border-box; width:100%;
   font-family:'DM Sans',sans-serif; font-size:13.5px; padding:0 12px;
   border:1px solid var(--divide-strong); border-radius:var(--r-md);
   background:var(--surface2); color:var(--text); outline:none;
   transition:border-color .15s, box-shadow .15s, background .15s;
 }
+.row-form input, .row-form select{width:auto;}
 select{
   appearance:none; -webkit-appearance:none;
   background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236e6e73' stroke-width='1.6'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
   background-repeat:no-repeat; background-position:right 10px center; background-size:14px; padding-right:32px;
 }
-input:focus, select:focus{border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-bg); background:#fff;}
-input.num-in{font-family:'DM Sans',sans-serif; font-variant-numeric:tabular-nums; text-align:right;}
-input[type=text].wide{min-width:200px;}
-input[type=number]{width:120px;}
-input[type=date]{width:155px;}
+input:focus, select:focus{border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-bg); background-color:#fff;}
+input.amount{font-variant-numeric:tabular-nums; text-align:right;}
+input[type=file]{height:auto; padding:8px;}
+input[type=checkbox]{height:auto; width:16px; accent-color:var(--blue); cursor:pointer;}
+.check{display:flex; gap:7px; align-items:center; font-size:13px; color:var(--text-secondary); cursor:pointer; white-space:nowrap;}
+
+.seg{display:inline-flex; background:var(--surface2); border-radius:var(--r-md); padding:3px; gap:2px; flex-wrap:wrap;}
+.seg button{font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; border:none; background:transparent; padding:8px 14px; border-radius:9px; cursor:pointer; color:var(--text-secondary);}
+.seg button.active{background:var(--surface); color:var(--text); font-weight:600; box-shadow:var(--shadow);}
 
 button.btn{
   font-family:'DM Sans',sans-serif; font-weight:600; font-size:13px; height:var(--field-h);
   background:var(--blue); color:#fff; border:none; border-radius:var(--r-md); padding:0 18px; cursor:pointer;
-  transition:opacity .15s;
+  transition:opacity .15s; white-space:nowrap;
 }
 button.btn:hover{opacity:.88;}
 button.btn.ghost{background:var(--surface2); color:var(--text);}
-button.btn.danger{background:var(--red); color:#fff; height:var(--field-h); padding:0 18px; font-size:13px; font-weight:600;}
-button.btn.danger.small{background:transparent; color:var(--red); height:auto; padding:6px 12px; font-size:12px;}
-button.btn.small{height:auto; padding:6px 12px; font-size:12px;}
-button.btn:disabled{opacity:.5; cursor:wait;}
+button.btn.danger{background:var(--red); color:#fff;}
+button.btn.danger.small{background:transparent; color:var(--red);}
+button.btn.small{height:auto; padding:6px 11px; font-size:12px;}
+button.btn:disabled{opacity:.5; cursor:not-allowed;}
+.actions{white-space:nowrap; text-align:right;}
 
 .proj-list{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
 .proj-chip{border:1px solid var(--divide-strong); border-radius:999px; padding:8px 16px; cursor:pointer; background:var(--surface);
   font-size:13px; font-weight:500; transition:all .15s var(--ease);}
 .proj-chip.active{background:var(--blue); color:#fff; border-color:var(--blue);}
 
-.hint{font-size:12px; color:var(--text-tertiary); margin-top:10px; line-height:1.6;}
-.checkbox-cell{text-align:center;}
-input[type=checkbox]{height:auto; width:16px; accent-color:var(--blue); cursor:pointer;}
+.hint{font-size:12px; color:var(--text-secondary); margin-top:10px; line-height:1.6;}
+.note{background:var(--orange-bg); color:#7a4300; border-radius:var(--r-md); padding:12px 14px; font-size:13px; line-height:1.55; margin-bottom:14px;}
+.note.blue{background:var(--blue-bg); color:#004a99;}
 .toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:var(--text); color:#fff;
-  padding:10px 18px; border-radius:999px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .25s; box-shadow:var(--shadow);}
+  padding:10px 18px; border-radius:999px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .25s; box-shadow:var(--shadow); z-index:2000; max-width:90vw; text-align:center;}
 .toast.show{opacity:1;}
 .empty{color:var(--text-tertiary); font-size:13px; padding:16px 0; font-style:italic;}
 .member-edit{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
 .loading{padding:60px 0; text-align:center; color:var(--text-tertiary); font-size:14px;}
+a.link{color:var(--blue); text-decoration:none;} a.link:hover{text-decoration:underline;}
 
-.setup-card{max-width:480px; margin:60px auto; background:var(--surface); border-radius:var(--r-xl); box-shadow:var(--shadow); padding:28px;}
+.setup-card{max-width:520px; margin:60px auto; background:var(--surface); border-radius:var(--r-xl); box-shadow:var(--shadow); padding:28px;}
 .setup-card h2{margin:0 0 6px; font-size:17px; font-weight:700; text-transform:none; letter-spacing:0; color:var(--text);}
 .setup-card p{font-size:13px; color:var(--text-secondary); line-height:1.6; margin:0 0 18px;}
 .setup-card .field{margin-bottom:14px;}
-.setup-card input{width:100%;}
 .gsi-btn{display:flex; align-items:center; justify-content:center; gap:10px; width:100%; height:44px; background:#fff; border:1px solid var(--divide-strong); border-radius:var(--r-md); cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:500; font-size:14px; color:var(--text);}
 .gsi-btn:hover{background:var(--surface2);}
+
+.modal-bg{position:fixed; inset:0; background:rgba(0,0,0,.25); z-index:1500; display:flex; align-items:center; justify-content:center; padding:16px;}
+.modal{background:var(--surface); border-radius:var(--r-xl); padding:24px; width:100%; max-width:440px; box-shadow:0 10px 40px rgba(0,0,0,.2);}
+.modal h2{font-size:16px; margin:0 0 8px;}
+.modal p{font-size:13px; color:var(--text-secondary); margin:0 0 14px; line-height:1.55;}
+
+/* Bericht */
+.report h1{font-size:22px; margin-bottom:4px;}
+.report .meta{font-size:13px; color:var(--text-secondary); margin-bottom:6px;}
+.report table{font-size:12.5px;}
+.report td{padding:7px 8px;} .report th{padding:7px 8px;}
+.print-only{display:none;}
+@media print{
+  @page{size:A4; margin:14mm 12mm;}
+  body{background:#fff; font-size:11px;}
+  .page{max-width:none; padding:0;}
+  header.top, .navrow, .no-print, .toast, #busy-overlay, #hang-banner{display:none !important;}
+  .card{box-shadow:none; padding:0; margin:0 0 18px; border-radius:0;}
+  .print-only{display:block;}
+  .report section{break-inside:avoid-page;}
+  .report section.long{break-inside:auto;}
+  .report table{font-size:10px;}
+  .tablewrap{overflow:visible;}
+  tr{break-inside:avoid;}
+  a{color:inherit; text-decoration:none;}
+}
 </style>
 </head>
 <body>
@@ -128,6 +186,7 @@ input[type=checkbox]{height:auto; width:16px; accent-color:var(--blue); cursor:p
   <div class="loading">Lade…</div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="modal-root"></div>
 <div id="busy-overlay" style="display:none; position:fixed; inset:0; background:rgba(242,242,247,.65); backdrop-filter:blur(2px); z-index:1000; align-items:center; justify-content:center; flex-direction:column; gap:12px;">
   <div style="width:28px; height:28px; border:3px solid var(--divide-strong); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite;"></div>
   <div style="font-size:13px; color:var(--text-secondary); font-weight:500;" id="busy-label">Speichert…</div>
@@ -140,23 +199,43 @@ input[type=checkbox]{height:auto; width:16px; accent-color:var(--blue); cursor:p
 
 <script>
 // ============ KONFIGURATION (wird einmalig lokal gespeichert) ============
-let CONFIG = JSON.parse(localStorage.getItem('karat_config') || 'null');
+let CONFIG = (()=>{ try { return JSON.parse(localStorage.getItem('karat_config') || 'null'); } catch(e){ return null; } })();
 
 // ============ Sheet-Struktur ============
+// Spalten werden über die Kopfzeile zugeordnet, nicht über die Position.
+// Fehlende Spalten hängt die App hinten an, vorhandene Daten bleiben unberührt.
 const SHEET_DEFS = {
-  Projekte:     ['id','name','kuerzel','traeger','budget','einnahmenBar','einnahmenShop'],
-  Buchungen:    ['id','projektId','datum','ausgabe','preis','kategorie','bezahltVon','zahlweg','belegnr','erstattet','erstattetVia','belegUrl'],
-  Vereinskonto: ['id','datum','kategorie','beschreibung','betrag','typ','konto','quelleBuchungId','belegnr','belegUrl'],
-  Konten:       ['konto','anfang','tatsaechlich'],
-  Mitglieder:   ['name'],
+  Journal:    ['id','belegnr','datum','typ','betrag','konto','zielKonto','kategorie','projektId','beschreibung','bezahltVon','erstattetDurch','bezugId','belegUrl','storniert','stornoGrund','pruefen','hinweis','erfasstAm','erfasstVon','geaendertAm','geaendertVon'],
+  Projekte:   ['id','name','kuerzel','traeger','budget','einnahmenBar','einnahmenShop'],
+  Konten:     ['konto','anfang','tatsaechlich','anfangDatum','tatsaechlichDatum'],
+  Mitglieder: ['name'],
+  Stammdaten: ['schluessel','wert'],
+  Protokoll:  ['zeit','nutzer','aktion','id','vorher','nachher'],
 };
-const ACCOUNTS = ["Vereinskonto","PayPal","Barkasse"];
-const ACCOUNT_LABELS = { Vereinskonto:"Bankkonto", PayPal:"PayPal", Barkasse:"Barkasse" };
-const KATEGORIEN = ["Verbrauch","Kauf","Leihe","Anschaffung","Geschenk"];
-function accLabel(a){ return ACCOUNT_LABELS[a] || a; }
-const DEFAULT_MEMBERS = ["Mitglied 1","Mitglied 2","Mitglied 3","Mitglied 4","Mitglied 5","Mitglied 6","Mitglied 7","Mitglied 8","Mitglied 9","Mitglied 10"];
+// Alte Tabs (bis Okt. 2026). Werden nur noch gelesen – für die einmalige Übernahme ins Journal.
+const LEGACY_SHEETS = ['Buchungen','Vereinskonto'];
 
-// ============ Auth ============
+const ACCOUNTS = ["Vereinskonto","PayPal","Barkasse"];
+const ACCOUNT_LABELS = { Vereinskonto:"Bankkonto", PayPal:"PayPal", Barkasse:"Barkasse", Privat:"privat" };
+function accLabel(a){ return ACCOUNT_LABELS[a] || a || '—'; }
+const DEFAULT_MEMBERS = ["Mitglied 1","Mitglied 2","Mitglied 3","Mitglied 4","Mitglied 5","Mitglied 6","Mitglied 7","Mitglied 8","Mitglied 9","Mitglied 10"];
+const DEFAULT_STAMM = [
+  ['name','STUDIO KARAT GbR'],
+  ['anschrift','Degenfeldstraße 13–15, 76131 Karlsruhe'],
+  ['steuernummer',''],
+  ['gesellschafter','Bauer, Hildenbrand, Lajos, Schwanninger, Schilbach'],
+  ['umsatzsteuer',''],
+];
+
+// ---------- Kategorien (EÜR) ----------
+const KAT_EINNAHME = ['Eintritte & Tickets','Verkäufe (Kunst, Shop, Getränke)','Honorare & Aufträge','Fördermittel & Zuschüsse','Mietanteile & Raumnutzung','Spenden','Sonstige Einnahmen'];
+const KAT_AUSGABE  = ['Miete & Nebenkosten','Material & Verbrauch','Getränke & Catering (Wareneinkauf)','Honorare & Fremdleistungen','Leihe & Miete Equipment','Technik & Geräte (bis 800 € netto)','Anschaffung über 800 € netto (AfA)','Werbung & Druck','Reise & Transport','Gebühren, Versicherung & Beiträge','Büro, Software & Telefon','Bewirtung (70 % abziehbar)','Geschenke (bis 50 €)','Sonstige Ausgaben'];
+// Bewegungen, die Geld verschieben, aber kein Gewinn/Verlust sind:
+const KAT_NEUTRAL_EIN = ['Einlage Gesellschafter','Durchlaufender Posten'];
+const KAT_NEUTRAL_AUS = ['Entnahme Gesellschafter','Durchlaufender Posten'];
+const NEUTRAL = ['Einlage Gesellschafter','Entnahme Gesellschafter','Durchlaufender Posten','Erstattung Auslage','Umbuchung'];
+
+// ============ Auth (unverändert) ============
 let accessToken = null;
 let tokenClient = null;
 let userInfo = null;
@@ -181,10 +260,12 @@ function signOut(){
   accessToken = null; userInfo = null;
   renderSetupOrSignIn();
 }
+function me(){ return (userInfo && userInfo.email) || ''; }
 
 // ============ Low-level Sheets API ============
 const API_BASE = 'https://sheets.googleapis.com/v4/spreadsheets';
 let sheetIdCache = {};
+let sheetHeaders = {};
 
 async function apiFetch(url, method, body){
   const res = await fetch(url, {
@@ -205,7 +286,11 @@ async function apiFetch(url, method, body){
 }
 
 function colLetter(n){ let s=''; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26); } return s; }
-function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)).slice(0,12); }
+function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)).replace(/-/g,'').slice(0,12); }
+function rng(r){ return encodeURIComponent(r); }
+// WICHTIG: Werte immer UNFORMATIERT lesen. Formatiert liefert ein deutsches Sheet „12,50" bzw. „1.234,56",
+// und parseFloat macht daraus 12 bzw. 1,234 – das war der Cent-Fehler.
+const READ_OPTS = 'valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER';
 
 async function getSheetMeta(){
   const meta = await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}?fields=sheets.properties`);
@@ -216,82 +301,102 @@ async function getSheetMeta(){
 
 async function ensureSheets(){
   const existing = await getSheetMeta();
-  const requests = [];
-  const toInit = [];
-  for(const name of Object.keys(SHEET_DEFS)){
-    if(!existing.includes(name)){ requests.push({ addSheet: { properties: { title: name } } }); toInit.push(name); }
-  }
-  if(requests.length){
-    await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}:batchUpdate`, 'POST', { requests });
+  const toInit = Object.keys(SHEET_DEFS).filter(n=>!existing.includes(n));
+  if(toInit.length){
+    await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}:batchUpdate`, 'POST', { requests: toInit.map(title=>({ addSheet:{ properties:{ title } } })) });
     await getSheetMeta();
   }
   for(const name of toInit){
-    const headers = SHEET_DEFS[name];
-    await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(name+'!A1')}?valueInputOption=RAW`, 'PUT', { values:[headers] });
-    if(name === 'Konten'){
-      await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent('Konten!A2')}?valueInputOption=RAW`, 'PUT',
-        { values: ACCOUNTS.map(a=>[a,0,0]) });
-    }
-    if(name === 'Mitglieder'){
-      await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent('Mitglieder!A2')}?valueInputOption=RAW`, 'PUT',
-        { values: DEFAULT_MEMBERS.map(m=>[m]) });
-    }
+    const rows = [SHEET_DEFS[name]];
+    if(name==='Konten') ACCOUNTS.forEach(a=>rows.push([a,0,0,'','']));
+    if(name==='Mitglieder') DEFAULT_MEMBERS.forEach(m=>rows.push([m]));
+    if(name==='Stammdaten') DEFAULT_STAMM.forEach(r=>rows.push(r));
+    await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${rng(name+'!A1')}?valueInputOption=RAW`, 'PUT', { values: rows });
   }
-  // Migration: bei bereits bestehenden Sheets fehlende Spalten hinten anhängen,
-  // ohne vorhandene Daten anzufassen.
+  // Fehlende Spalten hinten anhängen
   for(const name of Object.keys(SHEET_DEFS)){
-    if(toInit.includes(name)) continue;
-    const headerJson = await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(name+'!1:1')}`);
-    const currentHeaders = (headerJson.values && headerJson.values[0]) || [];
-    const missing = SHEET_DEFS[name].filter(h => currentHeaders.indexOf(h) === -1);
+    if(toInit.includes(name)) { sheetHeaders[name] = SHEET_DEFS[name].slice(); continue; }
+    const headerJson = await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${rng(name+'!1:1')}?${READ_OPTS}`);
+    const current = ((headerJson.values && headerJson.values[0]) || []).map(h=>String(h).trim());
+    const missing = SHEET_DEFS[name].filter(h => current.indexOf(h) === -1);
     if(missing.length){
-      const startCol = colLetter(currentHeaders.length + 1);
-      await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(name+'!'+startCol+'1')}?valueInputOption=RAW`, 'PUT', { values:[missing] });
+      await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${rng(name+'!'+colLetter(current.length+1)+'1')}?valueInputOption=RAW`, 'PUT', { values:[missing] });
     }
+    sheetHeaders[name] = current.concat(missing);
   }
 }
 
 async function readSheet(name){
-  const headers = SHEET_DEFS[name];
-  const range = `${name}!A2:${colLetter(headers.length)}`;
-  const json = await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(range)}`);
-  const rows = json.values || [];
-  return rows.map((r,i)=>{
+  const json = await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${rng(name+'!A1:AZ')}?${READ_OPTS}`);
+  const values = json.values || [];
+  const headers = (values[0] || []).map(h=>String(h).trim());
+  sheetHeaders[name] = headers;
+  return values.slice(1).map((r,i)=>{
     const o = { __row: i+2 };
-    headers.forEach((h,idx)=>{ o[h] = r[idx] !== undefined ? r[idx] : ''; });
+    headers.forEach((h,idx)=>{ if(h) o[h] = (r[idx] !== undefined && r[idx] !== null) ? r[idx] : ''; });
     return o;
-  }).filter(o => headers.some(h => o[h] !== '' && o[h] !== undefined));
+  }).filter(o => headers.some(h => h && o[h] !== ''));
 }
 
-async function appendRow(name, obj){
-  const headers = SHEET_DEFS[name];
-  const row = headers.map(h => obj[h] !== undefined ? obj[h] : '');
-  await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(name+'!A:A')}:append?valueInputOption=USER_ENTERED`, 'POST', { values:[row] });
+function toRow(name, obj){
+  const headers = sheetHeaders[name] || SHEET_DEFS[name];
+  return headers.map(h => {
+    const v = obj[h];
+    if(v === undefined || v === null) return '';
+    return v;
+  });
 }
 
-async function updateRow(name, rowNumber, obj){
-  const headers = SHEET_DEFS[name];
-  const row = headers.map(h => obj[h] !== undefined ? obj[h] : '');
-  const range = `${name}!A${rowNumber}:${colLetter(headers.length)}${rowNumber}`;
-  await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`, 'PUT', { values:[row] });
+// RAW = Werte werden 1:1 gespeichert. Zahlen bleiben Zahlen (mit Cent), Text bleibt Text, keine Formeln.
+async function appendRows(name, objs){
+  if(!objs.length) return;
+  await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${rng(name+'!A1')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, 'POST', { values: objs.map(o=>toRow(name,o)) });
 }
 
-async function deleteRows(name, rowNumbers){
-  if(!rowNumbers.length) return;
-  const sheetId = sheetIdCache[name];
-  const uniqueDesc = [...new Set(rowNumbers)].sort((a,b)=>b-a);
-  const requests = uniqueDesc.map(r => ({
-    deleteDimension: { range: { sheetId, dimension:'ROWS', startIndex:r-1, endIndex:r } }
-  }));
-  await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}:batchUpdate`, 'POST', { requests });
+// Zeilen über ihre ID finden (nicht über gemerkte Zeilennummern) – sicher, wenn mehrere gleichzeitig arbeiten.
+async function updateRows(name, objs, idField){
+  if(!objs.length) return;
+  idField = idField || 'id';
+  const headers = sheetHeaders[name];
+  const idIdx = headers.indexOf(idField);
+  if(idIdx < 0) throw new Error(`Spalte ${idField} fehlt in ${name}`);
+  const col = colLetter(idIdx+1);
+  const colJson = await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${rng(name+'!'+col+':'+col)}?${READ_OPTS}`);
+  const ids = (colJson.values || []).map(r => r[0] !== undefined ? String(r[0]) : '');
+  const last = colLetter(headers.length);
+  const data = objs.map(o=>{
+    const idx = ids.indexOf(String(o[idField]));
+    if(idx < 1) throw new Error(`Eintrag ${o[idField]} nicht mehr im Sheet gefunden – bitte neu laden.`);
+    const r = idx+1;
+    return { range: `${name}!A${r}:${last}${r}`, values:[toRow(name,o)] };
+  });
+  await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values:batchUpdate`, 'POST', { valueInputOption:'RAW', data });
+}
+
+async function deleteRowById(name, id, idField){
+  idField = idField || 'id';
+  const headers = sheetHeaders[name];
+  const col = colLetter(headers.indexOf(idField)+1);
+  const colJson = await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${rng(name+'!'+col+':'+col)}?${READ_OPTS}`);
+  const ids = (colJson.values || []).map(r => r[0] !== undefined ? String(r[0]) : '');
+  const idx = ids.indexOf(String(id));
+  if(idx < 1) return;
+  await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}:batchUpdate`, 'POST', { requests:[{ deleteDimension:{ range:{ sheetId: sheetIdCache[name], dimension:'ROWS', startIndex: idx, endIndex: idx+1 } } }] });
 }
 
 async function clearAndWrite(name, rowsOfValues){
-  const headers = SHEET_DEFS[name];
-  await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(name+'!A2:'+colLetter(headers.length)+'2000')}:clear`, 'POST', {});
+  const last = colLetter((sheetHeaders[name]||SHEET_DEFS[name]).length);
+  await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${rng(name+'!A2:'+last+'5000')}:clear`, 'POST', {});
   if(rowsOfValues.length){
-    await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${encodeURIComponent(name+'!A2')}?valueInputOption=USER_ENTERED`, 'PUT', { values: rowsOfValues });
+    await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${rng(name+'!A2')}?valueInputOption=RAW`, 'PUT', { values: rowsOfValues });
   }
+}
+
+function clean(o){ if(!o) return o; const c = Object.assign({}, o); delete c.__row; return c; }
+async function protokoll(aktion, id, vorher, nachher){
+  try {
+    await appendRows('Protokoll', [{ zeit: nowStamp(), nutzer: me(), aktion, id: id||'', vorher: vorher?JSON.stringify(clean(vorher)):'', nachher: nachher?JSON.stringify(clean(nachher)):'' }]);
+  } catch(e){ console.error('Protokoll fehlgeschlagen', e); }
 }
 
 // ============ Google Drive: Belege ablegen ============
@@ -310,29 +415,24 @@ async function findOrCreateFolder(name, parentId){
   folderCache[cacheKey] = created.id;
   return created.id;
 }
-
 async function resolveBelegFolder(typ, datumStr){
-  const year = (datumStr || '').slice(0,4) || String(new Date().getFullYear());
+  if(!CONFIG.financeFolderId) throw new Error('Kein Finanzen-Ordner eingestellt (Einstellungen).');
+  const year = /^\d{4}/.test(datumStr||'') ? datumStr.slice(0,4) : String(new Date().getFullYear());
   const alleRechnungen = await findOrCreateFolder('Alle Rechnungen', CONFIG.financeFolderId);
   const yearFolder = await findOrCreateFolder(year, alleRechnungen);
-  const subName = typ === 'Einnahme' ? 'Einnahmen' : 'Ausgaben';
+  const subName = typ === 'Einnahme' ? 'Einnahmen' : (typ === 'Umbuchung' ? 'Umbuchungen' : 'Ausgaben');
   return await findOrCreateFolder(subName, yearFolder);
 }
-
 function sanitizeFilenamePart(s){
   return (s || '').toString().normalize('NFKD').replace(/[^\w\- ]/g,'').trim().replace(/\s+/g,'_').slice(0,40) || 'Beleg';
 }
-
 function arrayBufferToBase64(buffer){
   let binary = '';
   const bytes = new Uint8Array(buffer);
   const chunkSize = 0x8000;
-  for(let i=0; i<bytes.length; i+=chunkSize){
-    binary += String.fromCharCode.apply(null, bytes.subarray(i, i+chunkSize));
-  }
+  for(let i=0; i<bytes.length; i+=chunkSize){ binary += String.fromCharCode.apply(null, bytes.subarray(i, i+chunkSize)); }
   return btoa(binary);
 }
-
 async function uploadBeleg(file, folderId, filename){
   const metadata = { name: filename, parents:[folderId] };
   const boundary = '-------karat' + uid();
@@ -352,44 +452,68 @@ async function uploadBeleg(file, folderId, filename){
   if(!res.ok) throw new Error((json.error && json.error.message) || 'Drive-Upload fehlgeschlagen');
   return json;
 }
-
-function nextBelegnummer(){
-  const nums = [];
-  Object.values(state.projectsById).forEach(p => (p.entries||[]).forEach(e=>{ const n=parseInt(e.belegnr,10); if(!isNaN(n)) nums.push(n); }));
-  state.vereinskonto.forEach(e=>{ const n=parseInt(e.belegnr,10); if(!isNaN(n)) nums.push(n); });
-  const max = nums.length ? Math.max(...nums) : 0;
-  return String(max+1).padStart(4,'0');
+async function storeBeleg(file, row, kuerzel){
+  const folderId = await resolveBelegFolder(row.typ, row.datum);
+  const ext = (file.name.split('.').pop() || 'pdf').toLowerCase();
+  const filename = `${row.datum}_${row.belegnr}_${kuerzel||'ALLG'}_${sanitizeFilenamePart(row.beschreibung)}.${ext}`;
+  const up = await uploadBeleg(file, folderId, filename);
+  return up.webViewLink || (up.id ? `https://drive.google.com/file/d/${up.id}/view` : '');
 }
 
-function extractDriveFileId(url){
-  if(!url) return null;
-  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  return m ? m[1] : null;
+// ============ Hilfsfunktionen ============
+function round2(n){ return Math.round((+n||0)*100)/100; }
+// Liest „12,50", „12.50", „1.234,56", „1234.56", „12,50 €" korrekt.
+function parseAmount(v){
+  if(typeof v === 'number') return isFinite(v) ? v : 0;
+  let s = String(v ?? '').trim().replace(/[€\s ]/g,'');
+  if(!s) return 0;
+  let neg = false;
+  if(/^-/.test(s)){ neg = true; s = s.slice(1); }
+  const lastComma = s.lastIndexOf(','), lastDot = s.lastIndexOf('.');
+  if(lastComma > -1 && lastDot > -1){
+    if(lastComma > lastDot) s = s.replace(/\./g,'').replace(',', '.');
+    else s = s.replace(/,/g,'');
+  } else if(lastComma > -1){
+    s = s.replace(/\./g,'').replace(/,/g, (m, i)=> i===lastComma ? '.' : '');
+  } else if(lastDot > -1 && /^\d{1,3}(\.\d{3})+$/.test(s)){
+    s = s.replace(/\./g,''); // „1.500" = 1500
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : (neg ? -n : n);
 }
-async function trashDriveFile(url){
-  const id = extractDriveFileId(url);
-  if(!id) return;
-  try { await apiFetch(`${DRIVE_FILES_API}/${id}`, 'PATCH', { trashed:true }); }
-  catch(e){ console.error('Beleg konnte nicht in den Papierkorb verschoben werden', e); }
+const num = parseAmount;
+function eur(n){ return (+n||0).toLocaleString('de-DE',{style:'currency',currency:'EUR'}); }
+function amountInput(n){ return (n===''||n===undefined||n===null) ? '' : (+n).toLocaleString('de-DE',{minimumFractionDigits:2, maximumFractionDigits:2, useGrouping:false}); }
+function esc(s){ return (s??'').toString().replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+const escAttr = esc;
+function truthy(v){ return v===true || v===1 || ['true','TRUE','WAHR','wahr','1','ja'].includes(String(v)); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function today(){ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function nowStamp(){ const d=new Date(); return `${today()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+// Datum robust normalisieren: ISO-Text, Sheets-Seriennummer oder „09.10.2026" → „2026-10-09"
+function toISO(v){
+  if(v === '' || v === null || v === undefined) return '';
+  if(typeof v === 'number'){
+    const d = new Date(Date.UTC(1899,11,30) + Math.round(v*86400000));
+    return d.toISOString().slice(0,10);
+  }
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return `${m[1]}-${pad(m[2])}-${pad(m[3])}`;
+  m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);
+  if(m){ const y = m[3].length===2 ? '20'+m[3] : m[3]; return `${y}-${pad(m[2])}-${pad(m[1])}`; }
+  if(/^\d+(\.\d+)?$/.test(s)) return toISO(parseFloat(s));
+  return s;
 }
+function deDate(iso){ const m = (iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}.${m[2]}.${m[1]}` : (iso||''); }
+function nextDay(iso){ const d = new Date(iso+'T12:00:00'); d.setDate(d.getDate()+1); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function val(id){ const el=document.getElementById(id); return el ? el.value : ''; }
 
-// ============ App-State & Business-Logik ============
-let state = { projectsById:{}, vereinskonto:[], kontoRows:[], members:[] };
-let activeTab = 'dashboard';
-let activeProjectId = null;
-let editingEntryId = null;
-
-function eur(n){ n=+n||0; return n.toLocaleString('de-DE',{style:'currency',currency:'EUR'}); }
-function num(v){ const n=parseFloat(v); return isNaN(n)?0:n; }
-function esc(s){ return (s??'').toString().replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
-function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
-function truthy(v){ return v===true || v==='true' || v===1 || v==='TRUE'; }
-
-function showToast(msg){
+function showToast(msg, ms){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
   clearTimeout(showToast._h);
-  showToast._h=setTimeout(()=>t.classList.remove('show'),1800);
+  showToast._h=setTimeout(()=>t.classList.remove('show'), ms || 2600);
 }
 let busyCount = 0;
 function setBusy(isBusy, label){
@@ -401,64 +525,163 @@ function setBusy(isBusy, label){
 }
 async function withBusy(label, fn){
   setBusy(true, label);
-  const timeoutId = setTimeout(()=>{ setBusy(false); document.getElementById('hang-banner').style.display='flex'; }, 20000);
+  const timeoutId = setTimeout(()=>{ setBusy(false); document.getElementById('hang-banner').style.display='flex'; }, 30000);
   try { const r = await fn(); clearTimeout(timeoutId); setBusy(false); return r; }
-  catch(err){ clearTimeout(timeoutId); setBusy(false); console.error(err); showToast('Fehler: '+(err.message||err)); throw err; }
+  catch(err){ clearTimeout(timeoutId); setBusy(false); console.error(err); showToast('Fehler: '+(err.message||err), 5000); throw err; }
+}
+function modal(html, onOk, okLabel, danger){
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `<div class="modal-bg"><div class="modal">${html}
+    <div class="row-form" style="justify-content:flex-end;">
+      <button class="btn ghost" id="m-cancel">Abbrechen</button>
+      <button class="btn ${danger?'danger':''}" id="m-ok">${okLabel||'OK'}</button>
+    </div></div></div>`;
+  const close = ()=>{ root.innerHTML=''; };
+  document.getElementById('m-cancel').onclick = close;
+  root.querySelector('.modal-bg').onclick = (e)=>{ if(e.target.classList.contains('modal-bg')) close(); };
+  document.getElementById('m-ok').onclick = async ()=>{
+    const res = await onOk();
+    if(res !== false) close();
+  };
+  const first = root.querySelector('input,select'); if(first) first.focus();
+}
+
+// ============ App-State ============
+let state = { projects:{}, projectOrder:[], journal:[], konten:[], members:[], stamm:{}, legacy:{ buchungen:[], vk:[], present:false } };
+let ui = {
+  tab:'uebersicht', year: String(new Date().getFullYear()), projectId:null, konto:'Vereinskonto',
+  filter:{ konto:'', projekt:'', art:'', q:'', ohneBeleg:false, pruefen:false, storno:false },
+  bf:{ art:'Ausgabe', editingId:null },
+};
+try { const y = localStorage.getItem('karat_year'); if(y) ui.year = y; } catch(e){}
+
+function normJournal(r){
+  r.betrag = round2(num(r.betrag));
+  r.datum = toISO(r.datum);
+  r.storniert = truthy(r.storniert);
+  r.pruefen = truthy(r.pruefen);
+  ['id','belegnr','typ','konto','zielKonto','kategorie','projektId','beschreibung','bezahltVon','erstattetDurch','bezugId','belegUrl','stornoGrund','hinweis'].forEach(k=>{ r[k] = (r[k]===undefined||r[k]===null) ? '' : String(r[k]); });
+  if(/^\d+$/.test(r.belegnr) && r.belegnr.length < 4) r.belegnr = r.belegnr.padStart(4,'0');
+  return r;
 }
 
 async function refresh(){
-  const [projekteRaw, buchungenRaw, vkRaw, kontenRaw, mitgliederRaw] = await Promise.all([
-    readSheet('Projekte'), readSheet('Buchungen'), readSheet('Vereinskonto'), readSheet('Konten'), readSheet('Mitglieder'),
+  const legacyPresent = LEGACY_SHEETS.filter(n=>sheetIdCache[n] !== undefined);
+  const [journal, projekte, konten, mitglieder, stamm, ...legacy] = await Promise.all([
+    readSheet('Journal'), readSheet('Projekte'), readSheet('Konten'), readSheet('Mitglieder'), readSheet('Stammdaten'),
+    ...legacyPresent.map(n=>readSheet(n)),
   ]);
-  state.projectsById = {};
-  projekteRaw.forEach(p=>{ p.entries = buchungenRaw.filter(b=>String(b.projektId)===String(p.id)); state.projectsById[p.id]=p; });
-  state.vereinskonto = vkRaw;
-  state.kontoRows = kontenRaw;
-  state.members = mitgliederRaw.map(m=>m.name);
-  const ids = Object.keys(state.projectsById);
-  if(ids.length && !state.projectsById[activeProjectId]) activeProjectId = ids[0];
+  state.journal = journal.map(normJournal);
+  state.projects = {}; state.projectOrder = [];
+  projekte.forEach(p=>{ p.id = String(p.id); p.budget = num(p.budget); state.projects[p.id] = p; state.projectOrder.push(p.id); });
+  state.konten = konten.map(k=>Object.assign(k, { anfang: num(k.anfang), tatsaechlich: num(k.tatsaechlich), anfangDatum: toISO(k.anfangDatum), tatsaechlichDatum: toISO(k.tatsaechlichDatum) }));
+  state.members = mitglieder.map(m=>String(m.name)).filter(Boolean);
+  state.stamm = {}; stamm.forEach(s=>{ state.stamm[String(s.schluessel)] = String(s.wert ?? ''); });
+  state.legacy = { buchungen:[], vk:[], present: legacyPresent.length>0 };
+  legacyPresent.forEach((n,i)=>{ if(n==='Buchungen') state.legacy.buchungen = legacy[i]; else state.legacy.vk = legacy[i]; });
+  if(state.projectOrder.length && !state.projects[ui.projectId]) ui.projectId = state.projectOrder[0];
 }
-function kontoRow(a){ return state.kontoRows.find(k=>k.konto===a) || {anfang:0, tatsaechlich:0, __row:null}; }
+function kontoRow(a){ return state.konten.find(k=>k.konto===a) || { konto:a, anfang:0, tatsaechlich:0, anfangDatum:'', tatsaechlichDatum:'' }; }
+function byId(id){ return state.journal.find(r=>r.id===id); }
+function projName(id){ return id && state.projects[id] ? state.projects[id].name : ''; }
 
-// ---------- Ableitungen ----------
-function pEinnahmen(p){ return num(p.einnahmenBar)+num(p.einnahmenShop); }
-function pAusgaben(p){ return (p.entries||[]).reduce((s,e)=>s+num(e.preis),0); }
-function pDifferenz(p){ return pEinnahmen(p)-pAusgaben(p); }
-function pByKonto(p, konto){ return (p.entries||[]).filter(e=>e.bezahltVon==='ausgeglichen' && e.zahlweg===konto).reduce((s,e)=>s+num(e.preis),0); }
-function pByPerson(p, member){ return (p.entries||[]).filter(e=>e.bezahltVon===member).reduce((s,e)=>s+num(e.preis),0); }
-function pByPersonOffen(p, member){ return (p.entries||[]).filter(e=>e.bezahltVon===member && !truthy(e.erstattet)).reduce((s,e)=>s+num(e.preis),0); }
-
-function vkFiltered(konto){ return state.vereinskonto.filter(e => (e.konto || 'Vereinskonto') === konto); }
-function vkEinnahmenKonto(konto){ return vkFiltered(konto).filter(e=>e.typ==='Einnahme').reduce((s,e)=>s+num(e.betrag),0); }
-function vkAusgabenKonto(konto){ return vkFiltered(konto).filter(e=>e.typ==='Ausgabe').reduce((s,e)=>s+num(e.betrag),0); }
-function vkEinnahmenAll(){ return state.vereinskonto.filter(e=>e.typ==='Einnahme').reduce((s,e)=>s+num(e.betrag),0); }
-function vkAusgabenAll(){ return state.vereinskonto.filter(e=>e.typ==='Ausgabe').reduce((s,e)=>s+num(e.betrag),0); }
-
-function kontoStand(konto){
-  const settings = kontoRow(konto);
-  const projects = Object.values(state.projectsById);
-  let zugang=0, abgang=0;
-  if(konto==='Barkasse'){ zugang = projects.reduce((s,p)=>s+num(p.einnahmenBar),0) + vkEinnahmenKonto('Barkasse'); abgang = projects.reduce((s,p)=>s+pByKonto(p,'Barkasse'),0) + vkAusgabenKonto('Barkasse'); }
-  else if(konto==='PayPal'){ zugang = projects.reduce((s,p)=>s+num(p.einnahmenShop),0) + vkEinnahmenKonto('PayPal'); abgang = projects.reduce((s,p)=>s+pByKonto(p,'PayPal'),0) + vkAusgabenKonto('PayPal'); }
-  else if(konto==='Vereinskonto'){ zugang = vkEinnahmenKonto('Vereinskonto'); abgang = vkAusgabenKonto('Vereinskonto') + projects.reduce((s,p)=>s+pByKonto(p,'Vereinskonto'),0); }
-  const endbestand = num(settings.anfang)+zugang-abgang;
-  return {anfang:num(settings.anfang), zugang, abgang, endbestand, tatsaechlich:num(settings.tatsaechlich)};
+// ============ Buchhaltungslogik ============
+function active(){ return state.journal.filter(r=>!r.storniert); }
+function inYear(r, y){ y = y || ui.year; return y==='alle' || (r.datum||'').slice(0,4) === y; }
+function isEuer(r){ return r.typ!=='Umbuchung' && !NEUTRAL.includes(r.kategorie); }
+function isAuslage(r){ return r.konto==='Privat' && r.typ==='Ausgabe'; }
+function isErstattung(r){ return r.kategorie==='Erstattung Auslage'; }
+// Wirkung einer Buchung auf ein Konto (+ Zugang / − Abgang)
+function effect(r, k){
+  if(r.typ==='Einnahme' && r.konto===k) return r.betrag;
+  if(r.typ==='Ausgabe' && r.konto===k) return -r.betrag;
+  if(r.typ==='Umbuchung'){ let e=0; if(r.konto===k) e-=r.betrag; if(r.zielKonto===k) e+=r.betrag; return e; }
+  return 0;
+}
+function counts(r, k){ const kr = kontoRow(k); return !kr.anfangDatum || !r.datum || r.datum >= kr.anfangDatum; }
+// Kontostand vor einem Datum (exklusiv). before = null → alles.
+function balanceAt(k, before){
+  const kr = kontoRow(k);
+  let b = kr.anfang;
+  active().forEach(r=>{ if(counts(r,k) && (!before || (r.datum||'') < before)) b += effect(r,k); });
+  return round2(b);
+}
+function yearBounds(y){ y = y || ui.year; return y==='alle' ? [null,null] : [`${y}-01-01`, `${+y+1}-01-01`]; }
+function kontoJahr(k, y){
+  const [from, to] = yearBounds(y);
+  const kr = kontoRow(k);
+  const start = from ? balanceAt(k, from) : kr.anfang;
+  let zu=0, ab=0;
+  active().forEach(r=>{
+    if(!counts(r,k)) return;
+    if(from && !((r.datum||'') >= from && (r.datum||'') < to)) return;
+    const e = effect(r,k); if(e>0) zu+=e; else ab-=e;
+  });
+  return { start: round2(start), zu: round2(zu), ab: round2(ab), ende: round2(start+zu-ab) };
+}
+function euer(y){
+  const rows = active().filter(r=>inYear(r,y) && isEuer(r));
+  const ein = {}, aus = {};
+  rows.forEach(r=>{ const t = r.typ==='Einnahme' ? ein : aus; const k = r.kategorie || 'ohne Kategorie'; t[k] = round2((t[k]||0) + r.betrag); });
+  const sumE = round2(Object.values(ein).reduce((s,v)=>s+v,0)), sumA = round2(Object.values(aus).reduce((s,v)=>s+v,0));
+  return { ein, aus, sumE, sumA, ergebnis: round2(sumE-sumA) };
+}
+function neutralSummary(y){
+  const out = {};
+  active().filter(r=>inYear(r,y) && !isEuer(r)).forEach(r=>{
+    const k = r.typ==='Umbuchung' ? `Umbuchung ${accLabel(r.konto)} → ${accLabel(r.zielKonto)}` : r.kategorie;
+    out[k] = round2((out[k]||0) + r.betrag);
+  });
+  return out;
+}
+function auslageOffen(a){ if(!a.erstattetDurch) return true; const e = byId(a.erstattetDurch); return !e || e.storniert; }
+function memberTotals(m, bis){
+  const al = active().filter(r=>isAuslage(r) && r.bezahltVon===m && (!bis || r.datum < bis));
+  const gesamt = round2(al.reduce((s,r)=>s+r.betrag,0));
+  const offenList = al.filter(a=>{
+    if(!bis) return auslageOffen(a);
+    const e = a.erstattetDurch ? byId(a.erstattetDurch) : null;
+    return !e || e.storniert || e.datum >= bis;
+  });
+  const offen = round2(offenList.reduce((s,r)=>s+r.betrag,0));
+  return { gesamt, offen, erstattet: round2(gesamt-offen), offenList };
+}
+function allMembersWithAuslagen(){
+  const set = new Set(state.members);
+  state.journal.forEach(r=>{ if(isAuslage(r) && r.bezahltVon) set.add(r.bezahltVon); });
+  return [...set];
+}
+function projektSummen(pid, y){
+  const rows = active().filter(r=>r.projektId===pid && isEuer(r) && (!y || inYear(r,y)));
+  const e = round2(rows.filter(r=>r.typ==='Einnahme').reduce((s,r)=>s+r.betrag,0));
+  const a = round2(rows.filter(r=>r.typ==='Ausgabe').reduce((s,r)=>s+r.betrag,0));
+  return { e, a, d: round2(e-a), n: rows.length };
+}
+function nextBelegnummer(){
+  const nums = state.journal.map(r=>parseInt(r.belegnr,10)).filter(n=>!isNaN(n));
+  return String((nums.length ? Math.max(...nums) : 0) + 1).padStart(4,'0');
+}
+function years(){
+  const set = new Set([String(new Date().getFullYear())]);
+  state.journal.forEach(r=>{ if(/^\d{4}/.test(r.datum)) set.add(r.datum.slice(0,4)); });
+  return [...set].sort().reverse();
+}
+function needsBeleg(r){ return !r.storniert && isEuer(r) && !r.belegUrl; }
+function artOf(r){
+  if(r.typ==='Umbuchung') return 'Umbuchung';
+  if(isErstattung(r)) return 'Erstattung';
+  if(isAuslage(r)) return 'Auslage';
+  return r.typ;
 }
 
-function memberTotals(member){
-  const projects = Object.values(state.projectsById);
-  const gesamt = projects.reduce((s,p)=>s+pByPerson(p,member),0);
-  const offen = projects.reduce((s,p)=>s+pByPersonOffen(p,member),0);
-  return {gesamt, offen, erstattet: gesamt-offen};
-}
-
-// ---------- Rendering ----------
+// ============ Rendering ============
 const TABS = [
-  {id:'dashboard', label:'Gesamtbilanz'},
+  {id:'uebersicht', label:'Übersicht'},
+  {id:'journal', label:'Buchungen'},
   {id:'projekte', label:'Projekte'},
-  {id:'kontobewegungen', label:'Kontobewegungen'},
-  {id:'kontenuebersicht', label:'Kontenübersicht'},
-  {id:'verrechnung', label:'Verrechnung'},
+  {id:'konten', label:'Konten'},
+  {id:'auslagen', label:'Auslagen'},
+  {id:'abschluss', label:'Jahresabschluss'},
 ];
 
 function renderApp(){
@@ -470,456 +693,742 @@ function renderApp(){
         <div><h1>STUDIO KARAT</h1><div class="kicker">Buchhaltung</div></div>
       </div>
       <div class="account-pill">
-        ${userInfo && userInfo.picture ? `<img src="${userInfo.picture}">` : ''}
+        ${userInfo && userInfo.picture ? `<img src="${escAttr(userInfo.picture)}" alt="">` : ''}
         <span>${userInfo ? esc(userInfo.email) : ''}</span>
-        <button class="btn ghost small" onclick="renderSetupForm()">Einstellungen</button>
-        <button class="btn ghost small" onclick="signOut()">Abmelden</button>
+        <button class="btn ghost small" data-action="settings">Einstellungen</button>
+        <button class="btn ghost small" data-action="signout">Abmelden</button>
       </div>
     </header>
-    <nav class="tabs" id="tabs"></nav>
+    <div class="navrow">
+      <nav class="tabs" id="tabs"></nav>
+      <label class="yearpick">Geschäftsjahr
+        <select id="year-select">${years().map(y=>`<option value="${y}" ${ui.year===y?'selected':''}>${y}</option>`).join('')}<option value="alle" ${ui.year==='alle'?'selected':''}>alle Jahre</option></select>
+      </label>
+    </div>
     <div id="content"></div>`;
+  document.getElementById('year-select').onchange = (e)=>{ ui.year = e.target.value; try{ localStorage.setItem('karat_year', ui.year); }catch(_){} renderContent(); };
   renderTabs();
   renderContent();
 }
-
 function renderTabs(){
   const nav = document.getElementById('tabs');
-  nav.innerHTML = TABS.map(t=>`<button class="${activeTab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
+  nav.innerHTML = TABS.map(t=>`<button class="${ui.tab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
   nav.querySelectorAll('button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 }
-function switchTab(id){
-  activeTab = id;
-  editingEntryId = null;
-  renderTabs();
-  renderContent();
-}
+function switchTab(id){ ui.tab = id; ui.bf.editingId = null; renderTabs(); renderContent(); window.scrollTo(0,0); }
 
 function renderContent(){
   const c = document.getElementById('content');
-  if(activeTab==='dashboard') c.innerHTML = renderDashboard();
-  else if(activeTab==='projekte') c.innerHTML = renderProjekte();
-  else if(activeTab==='kontobewegungen') c.innerHTML = renderKontobewegungen();
-  else if(activeTab==='kontenuebersicht') c.innerHTML = renderKontenuebersicht();
-  else if(activeTab==='verrechnung') c.innerHTML = renderVerrechnung();
-  bindEvents();
+  const views = { uebersicht:renderUebersicht, journal:renderJournal, projekte:renderProjekte, konten:renderKonten, auslagen:renderAuslagen, abschluss:renderAbschluss };
+  c.innerHTML = views[ui.tab]();
+  afterRender();
 }
 
-function renderDashboard(){
-  const projects = Object.values(state.projectsById);
-  const totalEinnahmen = projects.reduce((s,p)=>s+pEinnahmen(p),0) + vkEinnahmenAll();
-  const totalAusgaben = projects.reduce((s,p)=>s+pAusgaben(p),0) + vkAusgabenAll();
-  const diff = totalEinnahmen-totalAusgaben;
-  const rows = projects.map(p=>`
-    <tr><td>${esc(p.name)}</td>
-      <td class="num pos">${eur(pEinnahmen(p))}</td>
-      <td class="num neg">${eur(pAusgaben(p))}</td>
-      <td class="num ${pDifferenz(p)>=0?'pos':'neg'}">${eur(pDifferenz(p))}</td></tr>`).join('');
+function migrationCard(){
+  const L = state.legacy;
+  if(!L.present || state.journal.length) return '';
+  const nB = L.buchungen.length, nV = L.vk.length;
+  const nP = Object.values(state.projects).filter(p=>num(p.einnahmenBar)||num(p.einnahmenShop)).length;
+  if(!nB && !nV && !nP) return '';
+  return `<div class="card">
+    <h2>Altdaten übernehmen</h2>
+    <div class="note blue">Im Sheet liegen noch Daten im alten Format: ${nB} Projektausgaben, ${nV} Kontobewegungen, ${nP} Projekte mit Einnahmen-Summen.
+    Die App übernimmt alles einmalig in den neuen Tab <b>Journal</b>. Die alten Tabs bleiben unverändert im Sheet als Archiv.
+    Einträge, bei denen etwas unklar ist (fehlendes Datum, alte Kategorie, mögliche Umbuchung), werden mit <span class="badge warn">prüfen</span> markiert.</div>
+    <button class="btn" data-action="migrate">Altdaten jetzt übernehmen</button>
+  </div>`;
+}
+
+function renderUebersicht(){
+  const y = ui.year;
+  const E = euer(y);
+  const pr = state.journal.filter(r=>!r.storniert && r.pruefen && inYear(r,y)).length;
+  const ob = state.journal.filter(r=>needsBeleg(r) && inYear(r,y)).length;
+  const offenGesamt = round2(allMembersWithAuslagen().reduce((s,m)=>s+memberTotals(m).offen,0));
   const konten = ACCOUNTS.map(a=>{
-    const k = kontoStand(a);
-    return `<div class="kpi"><div class="label">${accLabel(a)}</div><div class="value ${k.endbestand>=0?'pos':'neg'}">${eur(k.endbestand)}</div></div>`;
+    const b = balanceAt(a, null);
+    return `<div class="kpi clickable" data-action="goto-konto" data-konto="${a}"><div class="label">${accLabel(a)}</div><div class="value ${b>=0?'':'neg'}">${eur(b)}</div><div class="sub">aktueller Stand laut Buchungen</div></div>`;
   }).join('');
+  const projRows = state.projectOrder.map(pid=>{ const s = projektSummen(pid, y); return s.n ? `<tr><td>${esc(state.projects[pid].name)}</td><td class="num pos">${eur(s.e)}</td><td class="num neg">${eur(s.a)}</td><td class="num ${s.d>=0?'pos':'neg'}">${eur(s.d)}</td></tr>` : ''; }).join('');
+  const ohne = (()=>{ const rows = active().filter(r=>!r.projektId && isEuer(r) && inYear(r,y)); const e=round2(rows.filter(r=>r.typ==='Einnahme').reduce((s,r)=>s+r.betrag,0)), a=round2(rows.filter(r=>r.typ==='Ausgabe').reduce((s,r)=>s+r.betrag,0)); return rows.length?`<tr><td>Allgemein (Miete, Fixkosten …)</td><td class="num pos">${eur(e)}</td><td class="num neg">${eur(a)}</td><td class="num ${e-a>=0?'pos':'neg'}">${eur(e-a)}</td></tr>`:''; })();
   return `
+    ${migrationCard()}
     <div class="grid cols-3" style="margin-bottom:16px;">
-      <div class="kpi"><div class="label">Einnahmen gesamt</div><div class="value pos">${eur(totalEinnahmen)}</div></div>
-      <div class="kpi"><div class="label">Ausgaben gesamt</div><div class="value neg">${eur(totalAusgaben)}</div></div>
-      <div class="kpi"><div class="label">Jahresergebnis</div><div class="value ${diff>=0?'pos':'neg'}">${eur(diff)}</div></div>
+      <div class="kpi"><div class="label">Einnahmen ${y==='alle'?'':y}</div><div class="value pos">${eur(E.sumE)}</div><div class="sub">steuerlich relevant</div></div>
+      <div class="kpi"><div class="label">Ausgaben ${y==='alle'?'':y}</div><div class="value neg">${eur(E.sumA)}</div><div class="sub">inkl. privat ausgelegter Kosten</div></div>
+      <div class="kpi"><div class="label">Überschuss</div><div class="value ${E.ergebnis>=0?'pos':'neg'}">${eur(E.ergebnis)}</div><div class="sub">Einnahmen − Ausgaben (EÜR)</div></div>
     </div>
-    <div class="card">
-      <h2>Projekte im Überblick</h2>
-      ${projects.length? `<table><thead><tr><th>Projekt</th><th>Einnahmen</th><th>Ausgaben</th><th>Differenz</th></tr></thead>
-      <tbody>${rows}
-      <tr class="total"><td>Kontobewegungen (Miete, Fixkosten, Barbewegungen etc.)</td>
-        <td class="num pos">${eur(vkEinnahmenAll())}</td><td class="num neg">${eur(vkAusgabenAll())}</td>
-        <td class="num ${vkEinnahmenAll()-vkAusgabenAll()>=0?'pos':'neg'}">${eur(vkEinnahmenAll()-vkAusgabenAll())}</td></tr>
-      </tbody></table>` : `<div class="empty">Noch keine Projekte angelegt. Los geht's im Tab „Projekte".</div>`}
-    </div>
+    ${(pr||ob) ? `<div class="note">${pr?`<b>${pr}</b> Buchung${pr>1?'en':''} ${pr>1?'sind':'ist'} als „prüfen" markiert. `:''}${ob?`<b>${ob}</b> Buchung${ob>1?'en haben':' hat'} noch keinen Beleg. `:''}
+      <a class="link" href="#" data-action="goto-journal-problems">Anzeigen</a></div>` : ''}
     <div class="card">
       <h2>Liquidität</h2>
-      <div class="grid cols-3">${konten}</div>
-      <div class="hint">Endbestand = Anfangsbestand + Zugänge − Abgänge. Details im Tab „Kontenübersicht".</div>
+      <div class="grid cols-4">${konten}
+        <div class="kpi clickable" data-action="goto-tab" data-tab="auslagen"><div class="label">Offene Auslagen</div><div class="value ${offenGesamt>0?'neg':''}">${eur(offenGesamt)}</div><div class="sub">schuldet die GbR Mitgliedern</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Projekte ${y==='alle'?'':y}</h2>
+      ${(projRows||ohne) ? `<div class="tablewrap"><table><thead><tr><th>Projekt</th><th class="num">Einnahmen</th><th class="num">Ausgaben</th><th class="num">Ergebnis</th></tr></thead>
+      <tbody>${projRows}${ohne}<tr class="total"><td>Gesamt</td><td class="num pos">${eur(E.sumE)}</td><td class="num neg">${eur(E.sumA)}</td><td class="num ${E.ergebnis>=0?'pos':'neg'}">${eur(E.ergebnis)}</td></tr></tbody></table></div>`
+      : `<div class="empty">Noch keine Buchungen in diesem Jahr.</div>`}
+      <div class="hint">Umbuchungen zwischen Konten, Erstattungen von Auslagen und Einlagen/Entnahmen verschieben nur Geld und zählen hier nicht als Einnahme oder Ausgabe.</div>
     </div>`;
 }
 
+// ---------- Buchungsformular ----------
+function bookingForm(opts){
+  opts = opts || {};
+  const editing = ui.bf.editingId ? byId(ui.bf.editingId) : null;
+  if(editing) ui.bf.art = artOf(editing);
+  const art = ui.bf.art;
+  const e = editing || {};
+  const pid = editing ? e.projektId : (opts.projektId || '');
+  const projOpts = `<option value="">– allgemein / kein Projekt –</option>` + state.projectOrder.map(id=>`<option value="${escAttr(id)}" ${pid===id?'selected':''}>${esc(state.projects[id].name)}</option>`).join('');
+  const accOpts = (sel)=>ACCOUNTS.map(a=>`<option value="${a}" ${sel===a?'selected':''}>${accLabel(a)}</option>`).join('');
+  const members = allMembersWithAuslagen();
+  return `<div class="card" id="bf">
+    <div class="card-head"><h2>${editing?`Buchung #${esc(e.belegnr)} bearbeiten`:(opts.title||'Neue Buchung')}</h2>
+      ${editing?'':`<div class="seg" id="bf-art">${['Einnahme','Ausgabe','Auslage','Umbuchung'].map(a=>`<button type="button" data-art="${a}" class="${art===a?'active':''}">${a==='Auslage'?'Privat ausgelegt':a}</button>`).join('')}</div>`}
+    </div>
+    <div class="form-grid">
+      <div class="field"><label>Datum (Zahlung)</label><input type="date" id="bf-datum" value="${escAttr(e.datum||today())}"></div>
+      <div class="field"><label>Betrag €</label><input type="text" inputmode="decimal" class="amount" id="bf-betrag" placeholder="0,00" value="${editing?amountInput(e.betrag):''}"></div>
+      <div class="field" data-show="Einnahme Ausgabe"><label id="bf-konto-label">Konto</label><select id="bf-konto">${accOpts(e.konto && e.konto!=='Privat' ? e.konto : 'Vereinskonto')}</select></div>
+      <div class="field" data-show="Auslage"><label>Bezahlt von (privat)</label><select id="bf-person"><option value="">– wer? –</option>${members.map(m=>`<option ${e.bezahltVon===m?'selected':''}>${esc(m)}</option>`).join('')}</select></div>
+      <div class="field" data-show="Umbuchung"><label>Von Konto</label><select id="bf-von">${accOpts(e.konto||'PayPal')}</select></div>
+      <div class="field" data-show="Umbuchung"><label>Nach Konto</label><select id="bf-nach">${accOpts(e.zielKonto||'Vereinskonto')}</select></div>
+      <div class="field" data-show="Einnahme Ausgabe Auslage"><label>Kategorie</label><select id="bf-kat" data-current="${escAttr(e.kategorie||'')}"></select></div>
+      <div class="field" data-show="Einnahme Ausgabe Auslage"><label>Projekt</label><select id="bf-projekt">${projOpts}</select></div>
+      <div class="field span2"><label>Beschreibung</label><input type="text" id="bf-beschreibung" placeholder="z.B. Getränke Eröffnung, Rechnung Nr. …" value="${escAttr(e.beschreibung||'')}"></div>
+      <div class="field" data-show="Einnahme Ausgabe Auslage Umbuchung"><label>Beleg ${editing&&e.belegUrl?'(ersetzen)':'(PDF/Foto)'}</label><input type="file" id="bf-beleg" accept="application/pdf,image/*"></div>
+    </div>
+    ${editing && e.pruefen ? `<div class="note" style="margin-top:14px;">Zu prüfen: ${esc(e.hinweis||'')}. Mit „Speichern" gilt die Buchung als geprüft.</div>`:''}
+    <div class="hint" id="bf-hint"></div>
+    <div class="row-form" style="justify-content:flex-end;">
+      ${editing?'<button class="btn ghost" data-action="bf-cancel">Abbrechen</button>':''}
+      <button class="btn" data-action="bf-save">${editing?'Speichern':'+ Buchen'}</button>
+    </div>
+  </div>`;
+}
+const BF_HINTS = {
+  Einnahme: 'Geld kommt auf ein Konto der GbR. Fördergelder, Eintritte, Verkäufe, Mietanteile.',
+  Ausgabe: 'Direkt von Bankkonto, PayPal oder Barkasse bezahlt.',
+  Auslage: 'Jemand hat privat bezahlt. Zählt sofort als Ausgabe der GbR. Die Rückzahlung läuft später über den Tab „Auslagen".',
+  Umbuchung: 'Geld wandert zwischen zwei eigenen Konten, z.B. PayPal → Bankkonto oder Barkasse → Bank. Kein Gewinn, kein Verlust.',
+  Erstattung: 'Rückzahlung einer Auslage. Datum, Konto und Beschreibung lassen sich ändern. Betrag oder Person ändern: stornieren und im Tab „Auslagen" neu erstatten.',
+};
+function updateBookingForm(){
+  const bf = document.getElementById('bf'); if(!bf) return;
+  const art = ui.bf.art;
+  bf.querySelectorAll('[data-show]').forEach(el=>{ el.style.display = el.dataset.show.split(' ').includes(art) ? '' : 'none'; });
+  if(art==='Erstattung'){ const k = bf.querySelector('#bf-konto'); if(k) k.parentElement.style.display=''; }
+  bf.querySelectorAll('#bf-art button').forEach(b=>b.classList.toggle('active', b.dataset.art===art));
+  const kat = document.getElementById('bf-kat');
+  if(kat){
+    const cur = kat.value || kat.dataset.current;
+    const list = art==='Einnahme' ? [...KAT_EINNAHME, '—', ...KAT_NEUTRAL_EIN] : [...KAT_AUSGABE, '—', ...(art==='Ausgabe'?KAT_NEUTRAL_AUS:[])];
+    const opts = [`<option value="" ${!cur?'selected':''}>– Kategorie wählen –</option>`].concat(list.map(k=> k==='—' ? `<option disabled>── kein Gewinn/Verlust ──</option>` : `<option ${cur===k?'selected':''}>${esc(k)}</option>`));
+    if(cur && !list.includes(cur) && !NEUTRAL.includes(cur)) opts.splice(1, 0, `<option selected>${esc(cur)}</option>`);
+    kat.innerHTML = opts.join('');
+  }
+  const kl = document.getElementById('bf-konto-label'); if(kl) kl.textContent = art==='Einnahme' ? 'Eingang auf' : 'Bezahlt über';
+  const h = document.getElementById('bf-hint'); if(h) h.textContent = BF_HINTS[art] || '';
+}
+async function saveBooking(){
+  const editing = ui.bf.editingId ? byId(ui.bf.editingId) : null;
+  const art = ui.bf.art;
+  const datum = val('bf-datum') || today();
+  const raw = val('bf-betrag');
+  const betrag = round2(parseAmount(raw));
+  const beschreibung = val('bf-beschreibung').trim();
+  if(!(betrag > 0)){ showToast('Betrag fehlt oder ist ungültig (z.B. 12,50)'); return; }
+  if(!beschreibung){ showToast('Bitte eine Beschreibung angeben'); return; }
+  let row = { datum, betrag, beschreibung };
+  if(art==='Einnahme' || art==='Ausgabe'){
+    Object.assign(row, { typ:art, konto:val('bf-konto'), zielKonto:'', bezahltVon:'', kategorie:val('bf-kat'), projektId:val('bf-projekt') });
+  } else if(art==='Auslage'){
+    const person = val('bf-person');
+    if(!person){ showToast('Wer hat privat bezahlt?'); return; }
+    Object.assign(row, { typ:'Ausgabe', konto:'Privat', zielKonto:'', bezahltVon:person, kategorie:val('bf-kat'), projektId:val('bf-projekt') });
+  } else if(art==='Umbuchung'){
+    const von = val('bf-von'), nach = val('bf-nach');
+    if(von===nach){ showToast('Von- und Nach-Konto sind gleich'); return; }
+    Object.assign(row, { typ:'Umbuchung', konto:von, zielKonto:nach, bezahltVon:'', kategorie:'Umbuchung', projektId:'' });
+  } else if(art==='Erstattung'){
+    row = { datum, beschreibung, konto: val('bf-konto') };
+    if(editing && Math.abs(betrag - editing.betrag) > 0.001){ showToast('Betrag einer Erstattung nicht ändern – stornieren und neu erstatten.', 4500); return; }
+  }
+  if(['Einnahme','Ausgabe','Auslage'].includes(art) && !row.kategorie){ showToast('Bitte eine Kategorie wählen'); return; }
+  if(editing && isAuslage(editing) && !auslageOffen(editing)){
+    const changed = Math.abs(editing.betrag - betrag) > 0.001 || row.konto!=='Privat' || row.bezahltVon!==editing.bezahltVon;
+    if(changed){ showToast('Diese Auslage ist schon erstattet. Erst die Erstattung stornieren, dann Betrag/Person ändern.', 5000); return; }
+  }
+  const file = (document.getElementById('bf-beleg')||{}).files ? document.getElementById('bf-beleg').files[0] : null;
+  const kuerzel = (state.projects[row.projektId ?? (editing&&editing.projektId)]||{}).kuerzel;
+  await withBusy(file ? 'Lädt Beleg hoch…' : 'Speichert…', async ()=>{
+    if(editing){
+      const updated = Object.assign({}, editing, row, { pruefen:false, geaendertAm: nowStamp(), geaendertVon: me() });
+      if(file) updated.belegUrl = await storeBeleg(file, updated, kuerzel);
+      await updateRows('Journal', [updated]);
+      await protokoll('geändert', updated.id, editing, updated);
+      ui.bf.editingId = null;
+    } else {
+      // frische Belegnummer, falls parallel jemand gebucht hat
+      state.journal = (await readSheet('Journal')).map(normJournal);
+      const nr = nextBelegnummer();
+      const neu = Object.assign({ id: uid(), belegnr: nr, erstattetDurch:'', bezugId:'', belegUrl:'', storniert:false, stornoGrund:'', pruefen:false, hinweis:'', erfasstAm: nowStamp(), erfasstVon: me(), geaendertAm:'', geaendertVon:'' }, row);
+      if(file) neu.belegUrl = await storeBeleg(file, neu, kuerzel);
+      await appendRows('Journal', [neu]);
+      await protokoll('neu', neu.id, null, neu);
+      showToast(`Gebucht als #${nr}`);
+    }
+    await refresh();
+  });
+  renderContent();
+}
+
+// ---------- Journal-Tabelle ----------
+function journalTable(rows, opts){
+  opts = opts || {};
+  if(!rows.length) return `<div class="empty">${opts.empty || 'Keine Buchungen.'}</div>`;
+  const body = rows.map(r=>{
+    const art = artOf(r);
+    const sign = r.typ==='Einnahme' ? 'pos' : (r.typ==='Ausgabe' ? 'neg' : '');
+    const kontoTxt = r.typ==='Umbuchung' ? `${accLabel(r.konto)} → ${accLabel(r.zielKonto)}` : (r.konto==='Privat' ? `<span class="badge person">${esc(r.bezahltVon)}</span>` : accLabel(r.konto));
+    let status = '';
+    if(r.storniert) status += `<span class="badge red" title="${escAttr(r.stornoGrund)}">storniert</span> `;
+    if(!r.storniert && r.pruefen) status += `<span class="badge warn" title="${escAttr(r.hinweis)}">prüfen</span> `;
+    if(!r.storniert && isAuslage(r)) status += auslageOffen(r) ? `<span class="badge warn">offen</span> ` : `<span class="badge settled">erstattet</span> `;
+    if(!r.storniert && isErstattung(r)) status += `<span class="badge grey">Erstattung</span> `;
+    if(!r.storniert && !isEuer(r) && !isErstattung(r)) status += `<span class="badge grey">neutral</span> `;
+    const beleg = r.belegUrl ? `<a class="link" href="${escAttr(r.belegUrl)}" target="_blank" rel="noopener">ansehen</a>` : (needsBeleg(r) ? '<span class="badge warn">fehlt</span>' : '—');
+    const canEdit = !r.storniert;
+    return `<tr class="${r.storniert?'storno':''} ${ui.bf.editingId===r.id?'editing':''}">
+      <td class="nr">${esc(r.belegnr)}</td>
+      <td class="date">${deDate(r.datum)}</td>
+      <td class="desc">${esc(r.beschreibung)}<span class="small">${esc(art==='Umbuchung'?'Umbuchung':r.kategorie)}${!opts.hideProject && r.projektId?' · '+esc(projName(r.projektId)):''}${r.storniert&&r.stornoGrund?' · Storno: '+esc(r.stornoGrund):''}</span></td>
+      <td>${kontoTxt}</td>
+      <td class="num ${sign}">${r.typ==='Ausgabe'?'−':''}${eur(r.betrag)}</td>
+      <td>${status}</td>
+      <td>${beleg}</td>
+      <td class="actions">${canEdit?`<button class="btn ghost small" data-action="edit" data-id="${r.id}">Bearbeiten</button> <button class="btn danger small" data-action="storno" data-id="${r.id}">Storno</button>`:''}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="tablewrap"><table><thead><tr><th>Nr.</th><th>Datum</th><th>Beschreibung</th><th>Konto</th><th class="num">Betrag</th><th>Status</th><th>Beleg</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
+function sortRows(rows, asc){
+  return rows.slice().sort((a,b)=>{ const d = (a.datum||'').localeCompare(b.datum||''); if(d) return asc?d:-d; const n = (parseInt(a.belegnr)||0)-(parseInt(b.belegnr)||0); return asc?n:-n; });
+}
+
+function renderJournal(){
+  const f = ui.filter;
+  let rows = state.journal.filter(r=>inYear(r));
+  if(!f.storno) rows = rows.filter(r=>!r.storniert);
+  if(f.konto) rows = rows.filter(r=>r.konto===f.konto || r.zielKonto===f.konto);
+  if(f.projekt) rows = rows.filter(r=> f.projekt==='-' ? !r.projektId : r.projektId===f.projekt);
+  if(f.art) rows = rows.filter(r=>artOf(r)===f.art);
+  if(f.ohneBeleg) rows = rows.filter(needsBeleg);
+  if(f.pruefen) rows = rows.filter(r=>r.pruefen && !r.storniert);
+  if(f.q){ const q = f.q.toLowerCase(); rows = rows.filter(r=>[r.beschreibung,r.kategorie,r.belegnr,r.bezahltVon,projName(r.projektId),amountInput(r.betrag)].join(' ').toLowerCase().includes(q)); }
+  rows = sortRows(rows, false);
+  const sumE = round2(rows.filter(r=>!r.storniert && r.typ==='Einnahme').reduce((s,r)=>s+r.betrag,0));
+  const sumA = round2(rows.filter(r=>!r.storniert && r.typ==='Ausgabe').reduce((s,r)=>s+r.betrag,0));
+  const sel = (id, opts, cur)=>`<select id="${id}" data-filter style="width:auto;">${opts.map(([v,l])=>`<option value="${escAttr(v)}" ${cur===v?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
+  return `
+    ${migrationCard()}
+    ${bookingForm()}
+    <div class="card">
+      <div class="card-head"><h2>Alle Buchungen ${ui.year==='alle'?'':ui.year} · ${rows.length}</h2>
+        <div class="hint" style="margin:0;">Zugänge ${eur(sumE)} · Abgänge ${eur(sumA)}</div></div>
+      <div class="row-form" style="margin-top:0; margin-bottom:12px;">
+        ${sel('f-konto', [['','alle Konten'], ...ACCOUNTS.map(a=>[a,accLabel(a)]), ['Privat','privat ausgelegt']], f.konto)}
+        ${sel('f-projekt', [['','alle Projekte'],['-','allgemein'], ...state.projectOrder.map(id=>[id,state.projects[id].name])], f.projekt)}
+        ${sel('f-art', [['','alle Arten'],['Einnahme','Einnahmen'],['Ausgabe','Ausgaben'],['Auslage','Auslagen'],['Erstattung','Erstattungen'],['Umbuchung','Umbuchungen']], f.art)}
+        <input type="text" id="f-q" placeholder="Suchen…" value="${escAttr(f.q)}" style="width:170px;">
+        <label class="check"><input type="checkbox" id="f-ohneBeleg" ${f.ohneBeleg?'checked':''}> ohne Beleg</label>
+        <label class="check"><input type="checkbox" id="f-pruefen" ${f.pruefen?'checked':''}> zu prüfen</label>
+        <label class="check"><input type="checkbox" id="f-storno" ${f.storno?'checked':''}> Stornos zeigen</label>
+      </div>
+      ${journalTable(rows, { empty:'Keine Buchungen für diese Auswahl.' })}
+      <div class="hint">Buchungen werden nicht gelöscht, sondern storniert. So bleibt die Nummernfolge lückenlos und jede Änderung nachvollziehbar (Tab „Protokoll" im Sheet).</div>
+    </div>`;
+}
+
+// ---------- Projekte ----------
 function renderProjekte(){
-  const ids = Object.keys(state.projectsById);
-  if(!activeProjectId || !state.projectsById[activeProjectId]) activeProjectId = ids[0] || null;
-  const chips = ids.map(id=>`<div class="proj-chip ${id===activeProjectId?'active':''}" data-pid="${id}">${esc(state.projectsById[id].name)}</div>`).join('');
-  let detail = '<div class="empty">Kein Projekt ausgewählt. Lege oben ein neues an.</div>';
-  if(activeProjectId){
-    const p = state.projectsById[activeProjectId];
-    const entryRows = (p.entries||[]).map(e=>`
-      <tr${editingEntryId===e.id?' style="background:var(--blue-bg);"':''}>
-        <td>${esc(e.datum||'')}</td><td>${esc(e.ausgabe||'')}</td>
-        <td class="num neg">${eur(e.preis)}</td><td>${esc(e.kategorie||'')}</td>
-        <td>${e.bezahltVon==='ausgeglichen' ? '<span class="badge settled">ausgeglichen</span>' : `<span class="badge person">${esc(e.bezahltVon)}</span>`}</td>
-        <td>${e.zahlweg? accLabel(e.zahlweg): ''}</td>
-        <td>${e.belegUrl ? `<a href="${escAttr(e.belegUrl)}" target="_blank" rel="noopener" style="color:var(--blue);">#${esc(e.belegnr)}</a>` : (e.belegnr? '#'+esc(e.belegnr) : '—')}</td>
-        <td>${e.bezahltVon!=='ausgeglichen' ? `<select data-entry-erstattet="${e.id}" style="height:32px; font-size:12.5px;">
-            <option value="" ${!truthy(e.erstattet)?'selected':''}>– offen –</option>
-            ${ACCOUNTS.map(a=>`<option value="${a}" ${truthy(e.erstattet)&&e.erstattetVia===a?'selected':''}>über ${accLabel(a)}</option>`).join('')}
-          </select>` : '—'}</td>
-        <td style="white-space:nowrap;">
-          <button class="btn ghost small" data-edit-entry="${e.id}">Bearbeiten</button>
-          <button class="btn danger small" data-del-entry="${e.id}">×</button>
-        </td>
-      </tr>`).join('');
-    const kontoRows = ACCOUNTS.map(a=>`<tr><td>${accLabel(a)}</td><td class="num neg">${eur(pByKonto(p,a))}</td></tr>`).join('');
-    const personRows = state.members.filter(m=>pByPerson(p,m)>0).map(m=>`<tr><td>${esc(m)}</td><td class="num">${eur(pByPerson(p,m))}</td></tr>`).join('') || '<tr><td colspan="2" class="empty">Niemand hat bisher privat ausgelegt.</td></tr>';
+  const ids = state.projectOrder;
+  if(!ui.projectId || !state.projects[ui.projectId]) ui.projectId = ids[0] || null;
+  const chips = ids.map(id=>`<div class="proj-chip ${id===ui.projectId?'active':''}" data-action="pick-project" data-pid="${escAttr(id)}">${esc(state.projects[id].name)}</div>`).join('');
+  let detail = '<div class="card"><div class="empty">Kein Projekt ausgewählt. Lege oben ein neues an.</div></div>';
+  if(ui.projectId){
+    const p = state.projects[ui.projectId];
+    const s = projektSummen(p.id, null);
+    const rows = sortRows(state.journal.filter(r=>r.projektId===p.id && !r.storniert), false);
+    const offen = round2(rows.filter(r=>isAuslage(r) && auslageOffen(r)).reduce((t,r)=>t+r.betrag,0));
+    const byKat = {};
+    rows.filter(r=>r.typ==='Ausgabe' && isEuer(r)).forEach(r=>{ byKat[r.kategorie] = round2((byKat[r.kategorie]||0)+r.betrag); });
     detail = `
       <div class="card">
-        <div class="grid cols-3">
-          <div class="field"><label>Titel</label><input type="text" id="p-name" value="${escAttr(p.name)}"></div>
+        <div class="form-grid">
+          <div class="field span2"><label>Titel</label><input type="text" id="p-name" value="${escAttr(p.name)}"></div>
           <div class="field"><label>Kürzel</label><input type="text" id="p-kuerzel" value="${escAttr(p.kuerzel||'')}" style="text-transform:uppercase;"></div>
-          <div class="field"><label>Projektträger</label><input type="text" id="p-traeger" value="${escAttr(p.traeger)}"></div>
-        </div>
-        <div class="grid cols-3" style="margin-top:14px;">
-          <div class="field"><label>Budget (€)</label><input type="number" step="0.01" class="num-in" id="p-budget" value="${p.budget||0}"></div>
-          <div class="field"><label>Einnahmen Bar (€)</label><input type="number" step="0.01" class="num-in" id="p-bar" value="${p.einnahmenBar||0}"></div>
-          <div class="field"><label>Einnahmen PayPal (€)</label><input type="number" step="0.01" class="num-in" id="p-shop" value="${p.einnahmenShop||0}"></div>
+          <div class="field"><label>Projektträger</label><input type="text" id="p-traeger" value="${escAttr(p.traeger||'')}"></div>
+          <div class="field"><label>Budget €</label><input type="text" inputmode="decimal" class="amount" id="p-budget" value="${amountInput(p.budget||0)}"></div>
         </div>
         <div class="row-form" style="justify-content:flex-end;">
-          <button class="btn ghost" id="p-save-meta">Angaben speichern</button>
-          <button class="btn danger" id="p-delete">Projekt löschen</button>
+          <button class="btn ghost" data-action="project-save">Angaben speichern</button>
+          <button class="btn danger" data-action="project-delete">Projekt löschen</button>
         </div>
       </div>
-      <div class="card">
-        <div class="grid cols-3">
-          <div class="kpi"><div class="label">Einnahmen</div><div class="value pos">${eur(pEinnahmen(p))}</div></div>
-          <div class="kpi"><div class="label">Ausgaben</div><div class="value neg">${eur(pAusgaben(p))}</div></div>
-          <div class="kpi"><div class="label">Restbudget</div><div class="value ${pDifferenz(p)>=0?'pos':'neg'}">${eur(pDifferenz(p))}</div></div>
-        </div>
-        ${(()=>{
-          const editing = editingEntryId ? (p.entries||[]).find(e=>e.id===editingEntryId) : null;
-          return `
-        <h3>${editing?'Ausgabe bearbeiten':'Ausgabe hinzufügen'}</h3>
-        <div class="row-form" id="entry-form">
-          <div class="field"><label>Datum</label><input type="date" id="e-datum" value="${editing?esc(editing.datum||''):''}"></div>
-          <div class="field"><label>Ausgabe</label><input type="text" class="wide" id="e-ausgabe" placeholder="z.B. Getränke" value="${editing?escAttr(editing.ausgabe||''):''}"></div>
-          <div class="field"><label>Preis €</label><input type="number" step="0.01" class="num-in" id="e-preis" value="${editing?editing.preis:''}"></div>
-          <div class="field"><label>Kategorie</label><select id="e-kategorie">${KATEGORIEN.map(k=>`<option ${editing&&editing.kategorie===k?'selected':''}>${k}</option>`).join('')}</select></div>
-          <div class="field"><label>Bezahlt von</label><select id="e-bezahltvon">
-            <option value="ausgeglichen" ${editing&&editing.bezahltVon==='ausgeglichen'?'selected':''}>ausgeglichen</option>
-            ${state.members.map(m=>`<option value="${escAttr(m)}" ${editing&&editing.bezahltVon===m?'selected':''}>${esc(m)}</option>`).join('')}
-          </select></div>
-          <div class="field"><label>Zahlweg (falls ausgeglichen)</label><select id="e-zahlweg"><option value="">–</option>${ACCOUNTS.map(a=>`<option value="${a}" ${editing&&editing.zahlweg===a?'selected':''}>${accLabel(a)}</option>`).join('')}</select></div>
-          <div class="field"><label>Beleg ${editing?'(nur bei Ersatz auswählen)':'(PDF/Foto)'}</label><input type="file" id="e-beleg" accept="application/pdf,image/*" style="height:auto; padding:8px;"></div>
-          <button class="btn" id="e-add">${editing?'Speichern':'+ Buchung'}</button>
-          ${editing?'<button class="btn ghost" id="e-cancel">Abbrechen</button>':''}
-        </div>`;
-        })()}
-        <h3>Ausgaben</h3>
-        <div class="hint">Bei „Erstattet über" wählst du aus, von welchem Konto die Rückzahlung an die Person kam – das zieht den Betrag automatisch in der Kontenübersicht von diesem Konto ab.</div>
-        <table><thead><tr><th>Datum</th><th>Ausgabe</th><th>Preis</th><th>Kategorie</th><th>Bezahlt von</th><th>Zahlweg</th><th>Beleg</th><th>Erstattet über</th><th></th></tr></thead>
-        <tbody>${entryRows || '<tr><td colspan="9" class="empty">Noch keine Buchungen.</td></tr>'}</tbody></table>
+      <div class="grid cols-4" style="margin-bottom:18px;">
+        <div class="kpi"><div class="label">Einnahmen</div><div class="value pos">${eur(s.e)}</div><div class="sub">alle Jahre</div></div>
+        <div class="kpi"><div class="label">Ausgaben</div><div class="value neg">${eur(s.a)}</div><div class="sub">${offen?`davon ${eur(offen)} noch nicht erstattet`:'alle Jahre'}</div></div>
+        <div class="kpi"><div class="label">Ergebnis</div><div class="value ${s.d>=0?'pos':'neg'}">${eur(s.d)}</div></div>
+        <div class="kpi"><div class="label">Budget übrig</div><div class="value ${p.budget-s.a>=0?'':'neg'}">${p.budget?eur(round2(p.budget-s.a)):'—'}</div><div class="sub">${p.budget?`von ${eur(p.budget)}`:'kein Budget eingetragen'}</div></div>
       </div>
+      ${bookingForm({ projektId:p.id, title:`Buchung für ${p.name}` })}
       <div class="card">
-        <div class="grid cols-2">
-          <div><h3>Nach Konto (Ausgaben)</h3><table><thead><tr><th>Konto</th><th>Ausgaben</th></tr></thead><tbody>${kontoRows}</tbody></table></div>
-          <div><h3>Nach Person (privat ausgelegt)</h3><table><thead><tr><th>Person</th><th>Ausgelegt</th></tr></thead><tbody>${personRows}</tbody></table></div>
-        </div>
+        <h2>Buchungen ${esc(p.name)}</h2>
+        ${journalTable(rows, { hideProject:true, empty:'Noch keine Buchungen in diesem Projekt.' })}
+        ${Object.keys(byKat).length?`<h3>Ausgaben nach Kategorie</h3><div class="tablewrap"><table><tbody>${Object.entries(byKat).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${eur(v)}</td></tr>`).join('')}</tbody></table></div>`:''}
       </div>`;
   }
   return `
     <div class="card">
       <h2>Projekte</h2>
-      <div class="proj-list">${chips}</div>
+      <div class="proj-list">${chips || '<span class="empty">Noch keine Projekte.</span>'}</div>
       <h3>Neues Projekt</h3>
       <div class="row-form">
-        <div class="field"><label>Titel *</label><input type="text" class="wide" id="new-proj-name" placeholder="Projekttitel"></div>
+        <div class="field"><label>Titel *</label><input type="text" id="new-proj-name" placeholder="Projekttitel" style="min-width:220px;"></div>
         <div class="field"><label>Kürzel *</label><input type="text" id="new-proj-kuerzel" placeholder="z.B. HHF" style="width:100px; text-transform:uppercase;"></div>
         <div class="field"><label>Projektträger *</label><input type="text" id="new-proj-traeger" value="STUDIO KARAT" style="width:160px;"></div>
-        <button class="btn" id="new-proj-add">+ Projekt anlegen</button>
+        <div class="field"><label>Budget €</label><input type="text" inputmode="decimal" class="amount" id="new-proj-budget" placeholder="0,00" style="width:120px;"></div>
+        <button class="btn" data-action="project-add">+ Projekt anlegen</button>
       </div>
     </div>
     ${detail}`;
 }
 
-function renderKontobewegungen(){
-  const rows = state.vereinskonto.map(e=>`
-    <tr><td>${esc(e.datum||'')}</td><td>${accLabel(e.konto||'Vereinskonto')}</td><td>${esc(e.kategorie||'')}${e.quelleBuchungId?' <span class="badge person" style="margin-left:4px;">automatisch</span>':''}</td><td>${esc(e.beschreibung||'')}</td>
-      <td class="num ${e.typ==='Einnahme'?'pos':'neg'}">${eur(e.betrag)}</td><td>${e.typ}</td>
-      <td>${e.belegUrl ? `<a href="${escAttr(e.belegUrl)}" target="_blank" rel="noopener" style="color:var(--blue);">#${esc(e.belegnr)}</a>` : (e.belegnr? '#'+esc(e.belegnr) : '—')}</td>
-      <td><button class="btn danger small" data-del-vk="${e.id}">×</button></td></tr>`).join('');
+// ---------- Konten ----------
+function renderKonten(){
+  const k = ui.konto;
+  const kr = kontoRow(k);
+  const y = ui.year;
+  const [from, to] = yearBounds(y);
+  const J = kontoJahr(k, y);
+  let rows = sortRows(active().filter(r=>(r.konto===k || r.zielKonto===k) && counts(r,k) && (!from || (r.datum>=from && r.datum<to))), true);
+  let saldo = J.start;
+  const ignored = active().filter(r=>(r.konto===k || r.zielKonto===k) && !counts(r,k)).length;
+  const body = rows.map(r=>{
+    const e = effect(r,k); saldo = round2(saldo + e);
+    const gegen = r.typ==='Umbuchung' ? (r.konto===k ? `→ ${accLabel(r.zielKonto)}` : `← ${accLabel(r.konto)}`) : (isErstattung(r) ? `an ${esc(r.bezahltVon)}` : esc(r.kategorie));
+    return `<tr><td class="nr">${esc(r.belegnr)}</td><td class="date">${deDate(r.datum)}</td>
+      <td class="desc">${esc(r.beschreibung)}<span class="small">${gegen}${r.projektId?' · '+esc(projName(r.projektId)):''}</span></td>
+      <td class="num pos">${e>0?eur(e):''}</td><td class="num neg">${e<0?eur(-e):''}</td><td class="num"><b>${eur(saldo)}</b></td>
+      <td>${r.belegUrl?`<a class="link" href="${escAttr(r.belegUrl)}" target="_blank" rel="noopener">Beleg</a>`:''}</td></tr>`;
+  }).join('');
+  const abglBal = kr.tatsaechlichDatum ? balanceAt(k, nextDay(kr.tatsaechlichDatum)) : balanceAt(k, null);
+  const diff = round2(kr.tatsaechlich - abglBal);
+  const hasAbgl = kr.tatsaechlichDatum || kr.tatsaechlich;
   return `
-    <div class="grid cols-3" style="margin-bottom:16px;">
-      <div class="kpi"><div class="label">Einnahmen gesamt</div><div class="value pos">${eur(vkEinnahmenAll())}</div></div>
-      <div class="kpi"><div class="label">Ausgaben gesamt</div><div class="value neg">${eur(vkAusgabenAll())}</div></div>
-      <div class="kpi"><div class="label">Saldo</div><div class="value ${vkEinnahmenAll()-vkAusgabenAll()>=0?'pos':'neg'}">${eur(vkEinnahmenAll()-vkAusgabenAll())}</div></div>
+    <div class="card">
+      <div class="proj-list" style="margin-bottom:0;">${ACCOUNTS.map(a=>`<div class="proj-chip ${a===k?'active':''}" data-action="pick-konto" data-konto="${a}">${accLabel(a)} · ${eur(balanceAt(a,null))}</div>`).join('')}</div>
+    </div>
+    <div class="grid cols-4" style="margin-bottom:18px;">
+      <div class="kpi"><div class="label">${from?'Stand 01.01.'+y:'Anfangsbestand'}</div><div class="value">${eur(J.start)}</div></div>
+      <div class="kpi"><div class="label">Zugänge</div><div class="value pos">${eur(J.zu)}</div></div>
+      <div class="kpi"><div class="label">Abgänge</div><div class="value neg">${eur(J.ab)}</div></div>
+      <div class="kpi"><div class="label">${from && to<=today() ? 'Stand 31.12.'+y : 'Stand jetzt'}</div><div class="value ${J.ende>=0?'':'neg'}">${eur(J.ende)}</div></div>
     </div>
     <div class="card">
-      <h2>Kontobewegungen</h2>
-      <div class="hint">Für alles, was nicht direkt über ein Projekt läuft: Mietanteile & Fixkosten übers Bankkonto, Wechselgeld/Entnahmen bei der Barkasse, gelegentliche Restbudget-Einzahlungen aus einem Projekt.</div>
-      <table><thead><tr><th>Datum</th><th>Konto</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th><th>Typ</th><th>Beleg</th><th></th></tr></thead>
-      <tbody>${rows || '<tr><td colspan="8" class="empty">Noch keine Einträge.</td></tr>'}</tbody></table>
+      <h2>Kontoauszug ${accLabel(k)} ${y==='alle'?'':y}</h2>
+      ${ignored?`<div class="note">${ignored} Buchung${ignored>1?'en liegen':' liegt'} vor dem Startdatum ${deDate(kr.anfangDatum)} und ${ignored>1?'zählen':'zählt'} nicht in den Saldo.</div>`:''}
+      ${rows.length ? `<div class="tablewrap"><table><thead><tr><th>Nr.</th><th>Datum</th><th>Beschreibung</th><th class="num">Zugang</th><th class="num">Abgang</th><th class="num">Saldo</th><th></th></tr></thead>
+        <tbody><tr class="sub"><td></td><td class="date">${from?deDate(from):(kr.anfangDatum?deDate(kr.anfangDatum):'')}</td><td>${from?'Übertrag':'Anfangsbestand'}</td><td></td><td></td><td class="num">${eur(J.start)}</td><td></td></tr>${body}
+        <tr class="total"><td></td><td></td><td>Endstand</td><td class="num pos">${eur(J.zu)}</td><td class="num neg">${eur(J.ab)}</td><td class="num">${eur(J.ende)}</td><td></td></tr></tbody></table></div>`
+        : `<div class="empty">Keine Bewegungen auf diesem Konto im gewählten Zeitraum.</div>`}
+    </div>
+    <div class="card">
+      <h2>Abgleich mit echtem Kontoauszug</h2>
+      <div class="form-grid">
+        <div class="field"><label>Anfangsbestand €</label><input type="text" inputmode="decimal" class="amount" id="k-anfang" value="${amountInput(kr.anfang)}"></div>
+        <div class="field"><label>gilt ab (Startdatum)</label><input type="date" id="k-anfangDatum" value="${escAttr(kr.anfangDatum)}"></div>
+        <div class="field"><label>Stand laut Kontoauszug €</label><input type="text" inputmode="decimal" class="amount" id="k-tat" value="${hasAbgl?amountInput(kr.tatsaechlich):''}"></div>
+        <div class="field"><label>am</label><input type="date" id="k-tatDatum" value="${escAttr(kr.tatsaechlichDatum)}"></div>
+        <button class="btn ghost" data-action="konto-save">Speichern</button>
+      </div>
+      ${hasAbgl ? `<div class="note ${Math.abs(diff)<0.005?'blue':''}" style="margin-top:14px; margin-bottom:0;">
+        Laut App am ${kr.tatsaechlichDatum?deDate(kr.tatsaechlichDatum):'heute'}: <b>${eur(abglBal)}</b> · Kontoauszug: <b>${eur(kr.tatsaechlich)}</b> ·
+        ${Math.abs(diff)<0.005 ? 'Stimmt überein.' : `Differenz <b>${eur(diff)}</b>. ${diff>0?'Auf dem Konto ist mehr Geld, als gebucht ist: Einnahme oder Umbuchung fehlt.':'Auf dem Konto ist weniger Geld, als gebucht ist: Ausgabe, Erstattung oder Gebühr fehlt.'}`}
+      </div>` : `<div class="hint">Anfangsbestand = Kontostand am Startdatum, bevor die erste Buchung in der App erfasst ist. Den Stand vom letzten Kontoauszug eintragen, dann rechnet die App die Differenz aus.</div>`}
+    </div>`;
+}
+
+// ---------- Auslagen ----------
+function renderAuslagen(){
+  const members = allMembersWithAuslagen();
+  const rows = members.map(m=>{ const t = memberTotals(m); return t.gesamt ? `<tr><td>${esc(m)}</td><td class="num">${eur(t.gesamt)}</td><td class="num pos">${eur(t.erstattet)}</td><td class="num ${t.offen>0?'neg':''}">${eur(t.offen)}</td></tr>` : ''; }).join('');
+  const totalOffen = round2(members.reduce((s,m)=>s+memberTotals(m).offen,0));
+  const open = members.map(m=>{
+    const t = memberTotals(m);
+    if(!t.offenList.length) return '';
+    const list = sortRows(t.offenList, true).map(a=>`<tr><td class="checkbox-cell"><input type="checkbox" data-erst-m="${escAttr(m)}" value="${a.id}" checked></td><td class="nr">${esc(a.belegnr)}</td><td class="date">${deDate(a.datum)}</td><td class="desc">${esc(a.beschreibung)}<span class="small">${esc(a.kategorie)}${a.projektId?' · '+esc(projName(a.projektId)):''}</span></td><td class="num">${eur(a.betrag)}</td></tr>`).join('');
+    return `<div class="card" data-member-card="${escAttr(m)}">
+      <div class="card-head"><h2>${esc(m)} · offen ${eur(t.offen)}</h2></div>
+      <div class="tablewrap"><table><tbody>${list}</tbody></table></div>
       <div class="row-form">
-        <div class="field"><label>Datum</label><input type="date" id="vk-datum"></div>
-        <div class="field"><label>Konto</label><select id="vk-konto">${ACCOUNTS.map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
-        <div class="field"><label>Kategorie</label><input type="text" id="vk-kategorie" placeholder="Mietanteil / Fixkosten / Transfer" style="width:180px;"></div>
-        <div class="field"><label>Beschreibung</label><input type="text" class="wide" id="vk-beschreibung"></div>
-        <div class="field"><label>Betrag €</label><input type="number" step="0.01" class="num-in" id="vk-betrag"></div>
-        <div class="field"><label>Typ</label><select id="vk-typ"><option>Einnahme</option><option>Ausgabe</option></select></div>
-        <div class="field"><label>Beleg (optional)</label><input type="file" id="vk-beleg" accept="application/pdf,image/*" style="height:auto; padding:8px;"></div>
-        <button class="btn" id="vk-add">+ Eintrag</button>
+        <div class="field"><label>Erstattet am</label><input type="date" data-erst-datum value="${today()}"></div>
+        <div class="field"><label>über</label><select data-erst-konto>${ACCOUNTS.map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
+        <button class="btn" data-action="erstatten" data-member="${escAttr(m)}">Ausgewählte erstatten</button>
       </div>
     </div>`;
-}
-
-function renderKontenuebersicht(){
-  const rows = ACCOUNTS.map(a=>{
-    const k = kontoStand(a);
-    const diff = k.tatsaechlich - k.endbestand;
-    return `<tr><td>${accLabel(a)}</td>
-      <td><input type="number" step="0.01" class="num-in" data-konto-anfang="${a}" value="${k.anfang}" style="width:105px;"></td>
-      <td class="num pos">${eur(k.zugang)}</td><td class="num neg">${eur(k.abgang)}</td>
-      <td class="num ${k.endbestand>=0?'pos':'neg'}">${eur(k.endbestand)}</td>
-      <td><input type="number" step="0.01" class="num-in" data-konto-tat="${a}" value="${k.tatsaechlich}" style="width:105px;"></td>
-      <td class="num ${Math.abs(diff)<0.005?'pos':'neg'}">${eur(diff)}</td></tr>`;
   }).join('');
+  const erst = sortRows(state.journal.filter(r=>isErstattung(r) && inYear(r)), false);
   return `
     <div class="card">
-      <h2>Kontenübersicht / Liquidität</h2>
-      <table><thead><tr><th>Konto</th><th>Anfangsbestand</th><th>Zugänge</th><th>Abgänge</th><th>Endbestand</th><th>Tatsächl. Kontostand</th><th>Differenz</th></tr></thead>
-      <tbody>${rows}</tbody></table>
-      <div class="row-form"><button class="btn ghost" id="konto-save">Kontostände speichern</button></div>
-      <div class="hint">Anfangsbestand und tatsächlicher Kontostand trägst du manuell ein. Zugänge/Abgänge berechnen sich automatisch.</div>
+      <h2>Auslagen der Mitglieder</h2>
+      ${rows ? `<div class="tablewrap"><table><thead><tr><th>Mitglied</th><th class="num">Ausgelegt</th><th class="num">Erstattet</th><th class="num">Offen</th></tr></thead>
+      <tbody>${rows}<tr class="total"><td>Gesamt offen</td><td></td><td></td><td class="num ${totalOffen>0?'neg':''}">${eur(totalOffen)}</td></tr></tbody></table></div>` : '<div class="empty">Niemand hat bisher privat ausgelegt.</div>'}
+      <div class="hint">Eine Auslage zählt am Tag der privaten Zahlung als Ausgabe der GbR. Die Rückzahlung bucht nur Geld vom Konto an die Person und zählt nicht nochmal als Ausgabe.</div>
+    </div>
+    ${open}
+    <div class="card">
+      <h2>Erstattungen ${ui.year==='alle'?'':ui.year}</h2>
+      ${journalTable(erst, { empty:'Keine Erstattungen in diesem Jahr.' })}
     </div>`;
 }
 
-function renderVerrechnung(){
-  const rows = state.members.map(m=>{
-    const t = memberTotals(m);
-    return `<tr><td>${esc(m)}</td><td class="num">${eur(t.gesamt)}</td><td class="num ${t.offen>0?'neg':''}">${eur(t.offen)}</td><td class="num pos">${eur(t.erstattet)}</td></tr>`;
-  }).join('');
-  const totalOffen = state.members.reduce((s,m)=>s+memberTotals(m).offen,0);
+// ---------- Jahresabschluss ----------
+function renderAbschluss(){
+  const y = ui.year;
+  if(y==='alle') return `<div class="card"><div class="empty">Bitte oben ein Geschäftsjahr wählen.</div></div>`;
+  const [from, to] = yearBounds(y);
+  const E = euer(y);
+  const N = neutralSummary(y);
+  const st = state.stamm;
+  const ges = (st.gesellschafter||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const all = sortRows(state.journal.filter(r=>inYear(r,y)), true);
+  const pr = all.filter(r=>!r.storniert && r.pruefen).length;
+  const ob = all.filter(needsBeleg).length;
+  const katRows = (obj)=>Object.entries(obj).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${eur(v)}</td></tr>`).join('') || '<tr><td colspan="2" class="empty">—</td></tr>';
+  const kontoRows = ACCOUNTS.map(a=>{ const J = kontoJahr(a,y); return `<tr><td>${accLabel(a)}</td><td class="num">${eur(J.start)}</td><td class="num">${eur(J.zu)}</td><td class="num">${eur(J.ab)}</td><td class="num"><b>${eur(J.ende)}</b></td></tr>`; }).join('');
+  const sumStart = round2(ACCOUNTS.reduce((s,a)=>s+kontoJahr(a,y).start,0)), sumEnde = round2(ACCOUNTS.reduce((s,a)=>s+kontoJahr(a,y).ende,0));
+  const ausl = allMembersWithAuslagen().map(m=>{ const t = memberTotals(m, to); return t.offen ? `<tr><td>${esc(m)}</td><td class="num">${eur(t.offen)}</td></tr>` : ''; }).join('');
+  const proj = state.projectOrder.map(pid=>{ const s = projektSummen(pid,y); return s.n?`<tr><td>${esc(state.projects[pid].name)}</td><td class="num">${eur(s.e)}</td><td class="num">${eur(s.a)}</td><td class="num">${eur(s.d)}</td></tr>`:''; }).join('');
+  const journalRows = all.map(r=>`<tr class="${r.storniert?'storno':''}"><td class="nr">${esc(r.belegnr)}</td><td class="date">${deDate(r.datum)}</td>
+    <td class="desc">${esc(r.beschreibung)}${r.storniert?` <span class="badge red">storniert${r.stornoGrund?': '+esc(r.stornoGrund):''}</span>`:''}</td>
+    <td>${esc(r.typ==='Umbuchung'?'Umbuchung':r.kategorie)}</td>
+    <td>${r.typ==='Umbuchung'?`${accLabel(r.konto)} → ${accLabel(r.zielKonto)}`:(r.konto==='Privat'?'privat: '+esc(r.bezahltVon):accLabel(r.konto))}</td>
+    <td>${esc(projName(r.projektId))}</td>
+    <td class="num">${r.typ==='Einnahme'?eur(r.betrag):''}</td><td class="num">${r.typ==='Ausgabe'?eur(r.betrag):(r.typ==='Umbuchung'?'('+eur(r.betrag)+')':'')}</td>
+    <td>${r.belegUrl?`<a class="link" href="${escAttr(r.belegUrl)}" target="_blank" rel="noopener">✓</a>`:'—'}</td></tr>`).join('');
   return `
-    <div class="card">
-      <h2>Verrechnung Mitglieder (Auslagen)</h2>
-      <div class="hint">„Erstattet" wird pro Buchung im jeweiligen Projekt-Tab abgehakt.</div>
-      <table><thead><tr><th>Mitglied</th><th>Ausgelegt gesamt</th><th>davon offen</th><th>davon erstattet</th></tr></thead>
-      <tbody>${rows}<tr class="total"><td>Gesamt offen</td><td></td><td class="num neg">${eur(totalOffen)}</td><td></td></tr></tbody></table>
+    <div class="card no-print">
+      <div class="card-head"><h2>Jahresabschluss ${y}</h2>
+        <div class="row-form" style="margin-top:0;">
+          <button class="btn ghost" data-action="csv">Journal als CSV</button>
+          <button class="btn ghost" data-action="csv-euer">EÜR als CSV</button>
+          <button class="btn" data-action="print">Drucken / PDF</button>
+        </div></div>
+      ${(pr||ob) ? `<div class="note" style="margin-bottom:0;">Vor der Abgabe klären: ${pr?`${pr} Buchung(en) „prüfen"`:''}${pr&&ob?', ':''}${ob?`${ob} Buchung(en) ohne Beleg`:''}. <a class="link" href="#" data-action="goto-journal-problems">Anzeigen</a></div>` : `<div class="note blue" style="margin-bottom:0;">Alle Buchungen ${y} haben einen Beleg, nichts ist offen markiert.</div>`}
+      <div class="hint">Für Steuerberater:in oder Finanzamt: PDF (Übersicht + vollständiges Journal), dazu die CSV und den Drive-Ordner „Alle Rechnungen/${y}" mit den Belegen.</div>
+    </div>
+    <div class="card report">
+      <section>
+        <h1>Einnahmenüberschussrechnung ${y}</h1>
+        <div class="meta"><b>${esc(st.name||'STUDIO KARAT GbR')}</b> · ${esc(st.anschrift||'')}${st.steuernummer?' · St.-Nr. '+esc(st.steuernummer):''}</div>
+        <div class="meta">Zeitraum ${deDate(from)} – ${deDate(`${y}-12-31`)}${st.umsatzsteuer?' · '+esc(st.umsatzsteuer):''}${ges.length?' · Gesellschafter: '+esc(ges.join(', ')):''}</div>
+        <div class="meta print-only">Erstellt am ${deDate(today())} mit STUDIO KARAT Buchhaltung</div>
+      </section>
+      <section>
+        <h3>1. Betriebseinnahmen</h3>
+        <div class="tablewrap"><table><tbody>${katRows(E.ein)}<tr class="total"><td>Summe Betriebseinnahmen</td><td class="num">${eur(E.sumE)}</td></tr></tbody></table></div>
+      </section>
+      <section>
+        <h3>2. Betriebsausgaben</h3>
+        <div class="tablewrap"><table><tbody>${katRows(E.aus)}<tr class="total"><td>Summe Betriebsausgaben</td><td class="num">${eur(E.sumA)}</td></tr></tbody></table></div>
+      </section>
+      <section>
+        <h3>3. Ergebnis</h3>
+        <div class="tablewrap"><table><tbody>
+          <tr><td>Betriebseinnahmen</td><td class="num">${eur(E.sumE)}</td></tr>
+          <tr><td>− Betriebsausgaben</td><td class="num">${eur(E.sumA)}</td></tr>
+          <tr class="total"><td>${E.ergebnis>=0?'Überschuss':'Verlust'}</td><td class="num">${eur(E.ergebnis)}</td></tr>
+          ${ges.length?ges.map(g=>`<tr class="sub"><td>Anteil ${esc(g)} (bei gleichen Anteilen, 1/${ges.length})</td><td class="num">${eur(round2(E.ergebnis/ges.length))}</td></tr>`).join(''):''}
+        </tbody></table></div>
+        ${ges.length?'<div class="hint">Verteilung nach Köpfen. Steht im Gesellschaftsvertrag etwas anderes, gilt der Vertrag.</div>':''}
+      </section>
+      <section>
+        <h3>4. Nicht ergebniswirksame Bewegungen</h3>
+        <div class="tablewrap"><table><tbody>${Object.keys(N).length?Object.entries(N).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${eur(v)}</td></tr>`).join(''):'<tr><td class="empty">keine</td><td></td></tr>'}</tbody></table></div>
+      </section>
+      <section>
+        <h3>5. Geldbestände</h3>
+        <div class="tablewrap"><table><thead><tr><th>Konto</th><th class="num">01.01.</th><th class="num">Zugänge</th><th class="num">Abgänge</th><th class="num">31.12.</th></tr></thead>
+        <tbody>${kontoRows}<tr class="total"><td>Summe</td><td class="num">${eur(sumStart)}</td><td></td><td></td><td class="num">${eur(sumEnde)}</td></tr></tbody></table></div>
+        <div class="hint">Probe: Bestand 01.01. + Überschuss + Einlagen − Entnahmen + Zunahme offener Auslagen = Bestand 31.12.</div>
+      </section>
+      <section>
+        <h3>6. Offene Auslagen zum 31.12. (Verbindlichkeiten gegenüber Mitgliedern)</h3>
+        <div class="tablewrap"><table><tbody>${ausl || '<tr><td class="empty">keine</td><td></td></tr>'}</tbody></table></div>
+      </section>
+      ${proj?`<section><h3>7. Projekte</h3><div class="tablewrap"><table><thead><tr><th>Projekt</th><th class="num">Einnahmen</th><th class="num">Ausgaben</th><th class="num">Ergebnis</th></tr></thead><tbody>${proj}</tbody></table></div></section>`:''}
+      <section class="long">
+        <h3>${proj?8:7}. Journal ${y} (vollständig, chronologisch, inkl. Stornos)</h3>
+        <div class="tablewrap"><table><thead><tr><th>Nr.</th><th>Datum</th><th>Beschreibung</th><th>Kategorie</th><th>Konto</th><th>Projekt</th><th class="num">Einnahme</th><th class="num">Ausgabe</th><th>Beleg</th></tr></thead><tbody>${journalRows || '<tr><td colspan="9" class="empty">keine Buchungen</td></tr>'}</tbody></table></div>
+      </section>
     </div>`;
 }
 
-// ---------- Events ----------
-function bindEvents(){
-  document.querySelectorAll('[data-pid]').forEach(el=>el.onclick=()=>{ activeProjectId = el.dataset.pid; editingEntryId = null; renderContent(); });
-
-  const newProjBtn = document.getElementById('new-proj-add');
-  if(newProjBtn) newProjBtn.onclick = async ()=>{
-    const name = document.getElementById('new-proj-name').value.trim();
-    const kuerzel = document.getElementById('new-proj-kuerzel').value.trim().toUpperCase();
-    const traeger = document.getElementById('new-proj-traeger').value.trim();
-    if(!name || !kuerzel || !traeger){ showToast('Titel, Kürzel und Projektträger sind Pflichtfelder'); return; }
-    await withBusy('Speichert…', async ()=>{
-      await appendRow('Projekte', {id:uid(), name, kuerzel, traeger, budget:0, einnahmenBar:0, einnahmenShop:0});
-      await refresh();
-    });
-    renderContent();
-  };
-  const saveMetaBtn = document.getElementById('p-save-meta');
-  if(saveMetaBtn) saveMetaBtn.onclick = async ()=>{
-    const p = state.projectsById[activeProjectId];
-    const updated = {
-      id: p.id,
-      name: document.getElementById('p-name').value.trim(),
-      kuerzel: document.getElementById('p-kuerzel').value.trim().toUpperCase() || 'ALLG',
-      traeger: document.getElementById('p-traeger').value.trim(),
-      budget: num(document.getElementById('p-budget').value),
-      einnahmenBar: num(document.getElementById('p-bar').value),
-      einnahmenShop: num(document.getElementById('p-shop').value),
-    };
-    await withBusy('Speichert…', async ()=>{ await updateRow('Projekte', p.__row, updated); await refresh(); });
-    renderContent(); showToast('Gespeichert');
-  };
-  const delProjBtn = document.getElementById('p-delete');
-  if(delProjBtn) delProjBtn.onclick = async ()=>{
-    if(!confirm('Projekt wirklich löschen?')) return;
-    const p = state.projectsById[activeProjectId];
-    const entryRows = (p.entries||[]).map(e=>e.__row);
-    const entryIds = (p.entries||[]).map(e=>e.id);
-    const linkedVk = state.vereinskonto.filter(v=>entryIds.includes(v.quelleBuchungId));
-    await withBusy('Löscht…', async ()=>{
-      const belegUrls = [...(p.entries||[]).map(e=>e.belegUrl), ...linkedVk.map(v=>v.belegUrl)].filter(Boolean);
-      await Promise.all(belegUrls.map(u=>trashDriveFile(u)));
-      await deleteRows('Buchungen', entryRows);
-      await deleteRows('Vereinskonto', linkedVk.map(v=>v.__row));
-      await deleteRows('Projekte', [p.__row]);
-      await refresh();
-    });
-    activeProjectId = null;
-    editingEntryId = null;
-    renderContent();
-  };
-  const addEntryBtn = document.getElementById('e-add');
-  if(addEntryBtn) addEntryBtn.onclick = async ()=>{
-    const bezahltVon = document.getElementById('e-bezahltvon').value;
-    const preis = num(document.getElementById('e-preis').value);
-    const ausgabe = document.getElementById('e-ausgabe').value.trim();
-    if(!ausgabe || !preis){ showToast('Bitte Ausgabe und Preis angeben'); return; }
-    const datum = document.getElementById('e-datum').value || new Date().toISOString().slice(0,10);
-    const kategorie = document.getElementById('e-kategorie').value;
-    const zahlweg = bezahltVon==='ausgeglichen' ? document.getElementById('e-zahlweg').value : '';
-    const file = document.getElementById('e-beleg').files[0];
-    const p = state.projectsById[activeProjectId];
-    const editing = editingEntryId ? (p.entries||[]).find(e=>e.id===editingEntryId) : null;
-
-    await withBusy(file ? 'Lädt Beleg hoch…' : 'Speichert…', async ()=>{
-      let belegnr = editing ? editing.belegnr : nextBelegnummer();
-      let belegUrl = editing ? editing.belegUrl : '';
-      if(file){
-        if(editing && editing.belegUrl) await trashDriveFile(editing.belegUrl);
-        if(!belegnr) belegnr = nextBelegnummer();
-        const folderId = await resolveBelegFolder('Ausgabe', datum);
-        const ext = (file.name.split('.').pop() || 'pdf');
-        const filename = `${datum}_${belegnr}_${p.kuerzel||'ALLG'}_${sanitizeFilenamePart(ausgabe)}.${ext}`;
-        const uploaded = await uploadBeleg(file, folderId, filename);
-        belegUrl = uploaded.webViewLink || '';
-      }
-      if(editing){
-        const updated = Object.assign({}, editing, { datum, ausgabe, preis, kategorie, bezahltVon, zahlweg, belegnr, belegUrl });
-        await updateRow('Buchungen', editing.__row, updated);
-        editingEntryId = null;
-      } else {
-        const entry = { id: uid(), projektId: activeProjectId, datum, ausgabe, preis, kategorie, bezahltVon, zahlweg, belegnr, erstattet:false, erstattetVia:'', belegUrl };
-        await appendRow('Buchungen', entry);
-      }
-      await refresh();
-    });
-    renderContent();
-  };
-  const cancelEditBtn = document.getElementById('e-cancel');
-  if(cancelEditBtn) cancelEditBtn.onclick = ()=>{ editingEntryId = null; renderContent(); };
-  document.querySelectorAll('[data-edit-entry]').forEach(el=>el.onclick=()=>{ editingEntryId = el.dataset.editEntry; renderContent(); });
-  document.querySelectorAll('[data-del-entry]').forEach(el=>el.onclick=async()=>{
-    const p = state.projectsById[activeProjectId];
-    const entry = (p.entries||[]).find(e=>e.id===el.dataset.delEntry);
-    const linked = state.vereinskonto.find(v=>v.quelleBuchungId===entry.id);
-    await withBusy('Löscht…', async ()=>{
-      if(entry.belegUrl) await trashDriveFile(entry.belegUrl);
-      if(linked && linked.belegUrl) await trashDriveFile(linked.belegUrl);
-      await deleteRows('Buchungen', [entry.__row]);
-      if(linked) await deleteRows('Vereinskonto', [linked.__row]);
-      await refresh();
-    });
-    if(editingEntryId === entry.id) editingEntryId = null;
-    renderContent();
-  });
-  document.querySelectorAll('[data-entry-erstattet]').forEach(el=>el.onchange=async()=>{
-    const p = state.projectsById[activeProjectId];
-    const entry = (p.entries||[]).find(e=>e.id===el.dataset.entryErstattet);
-    const konto = el.value;
-    const linked = state.vereinskonto.find(v=>v.quelleBuchungId===entry.id);
-    await withBusy('Speichert…', async ()=>{
-      if(konto){
-        const vkEntry = {
-          id: linked ? linked.id : uid(),
-          datum: new Date().toISOString().slice(0,10),
-          konto,
-          kategorie: 'Erstattung',
-          beschreibung: `Erstattung an ${entry.bezahltVon} – ${p.name} (${entry.ausgabe})`,
-          betrag: entry.preis,
-          typ: 'Ausgabe',
-          quelleBuchungId: entry.id,
-        };
-        if(linked){ await updateRow('Vereinskonto', linked.__row, vkEntry); }
-        else { await appendRow('Vereinskonto', vkEntry); }
-      } else if(linked){
-        await deleteRows('Vereinskonto', [linked.__row]);
-      }
-      const updated = Object.assign({}, entry, { erstattet: !!konto, erstattetVia: konto });
-      await updateRow('Buchungen', entry.__row, updated);
-      await refresh();
-    });
-    renderContent();
-  });
-
-  const vkAdd = document.getElementById('vk-add');
-  if(vkAdd) vkAdd.onclick = async ()=>{
-    const beschreibung = document.getElementById('vk-beschreibung').value.trim();
-    const betrag = num(document.getElementById('vk-betrag').value);
-    if(!beschreibung || !betrag){ showToast('Bitte Beschreibung und Betrag angeben'); return; }
-    const datum = document.getElementById('vk-datum').value || new Date().toISOString().slice(0,10);
-    const typ = document.getElementById('vk-typ').value;
-    const file = document.getElementById('vk-beleg').files[0];
-    await withBusy(file ? 'Lädt Beleg hoch…' : 'Speichert…', async ()=>{
-      const belegnr = nextBelegnummer();
-      let belegUrl = '';
-      if(file){
-        const folderId = await resolveBelegFolder(typ, datum);
-        const ext = (file.name.split('.').pop() || 'pdf');
-        const filename = `${datum}_${belegnr}_ALLG_${sanitizeFilenamePart(beschreibung)}.${ext}`;
-        const uploaded = await uploadBeleg(file, folderId, filename);
-        belegUrl = uploaded.webViewLink || '';
-      }
-      const entry = {
-        id: uid(), datum,
-        konto: document.getElementById('vk-konto').value,
-        kategorie: document.getElementById('vk-kategorie').value.trim(),
-        beschreibung, betrag, typ, belegnr, belegUrl, quelleBuchungId:'',
-      };
-      await appendRow('Vereinskonto', entry);
-      await refresh();
-    });
-    renderContent();
-  };
-  document.querySelectorAll('[data-del-vk]').forEach(el=>el.onclick=async()=>{
-    const entry = state.vereinskonto.find(e=>e.id===el.dataset.delVk);
-    await withBusy('Löscht…', async ()=>{
-      if(entry.belegUrl) await trashDriveFile(entry.belegUrl);
-      await deleteRows('Vereinskonto', [entry.__row]);
-      if(entry.quelleBuchungId){
-        for(const proj of Object.values(state.projectsById)){
-          const src = (proj.entries||[]).find(e=>e.id===entry.quelleBuchungId);
-          if(src){ await updateRow('Buchungen', src.__row, Object.assign({}, src, { erstattet:false, erstattetVia:'' })); break; }
-        }
-      }
-      await refresh();
-    });
-    renderContent();
-  });
-
-  const kontoSaveBtn = document.getElementById('konto-save');
-  if(kontoSaveBtn) kontoSaveBtn.onclick = async ()=>{
-    await withBusy('Speichert…', async ()=>{
-      for(const a of ACCOUNTS){
-        const row = kontoRow(a);
-        const anfang = num(document.querySelector(`[data-konto-anfang="${a}"]`).value);
-        const tatsaechlich = num(document.querySelector(`[data-konto-tat="${a}"]`).value);
-        await updateRow('Konten', row.__row, { konto:a, anfang, tatsaechlich });
-      }
-      await refresh();
-    });
-    renderContent(); showToast('Gespeichert');
-  };
-
-  const addMemberBtn = document.getElementById('add-member');
-  if(addMemberBtn) addMemberBtn.onclick = async ()=>{
-    const val = document.getElementById('new-member-name').value.trim();
-    if(!val) return;
-    const names = [...state.members, val];
-    await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
-    renderContent();
-  };
-  document.querySelectorAll('[data-del-member]').forEach(el=>el.onclick=async()=>{
-    const names = state.members.filter((_,i)=>i!==+el.dataset.delMember);
-    await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
-    renderContent();
-  });
-  const saveMembersBtn = document.getElementById('save-members');
-  if(saveMembersBtn) saveMembersBtn.onclick = async ()=>{
-    const names = state.members.map((_,i)=>document.querySelector(`[data-member-idx="${i}"]`).value.trim());
-    await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
-    renderContent(); showToast('Gespeichert');
-  };
+function csvCell(v){ const s = (v??'').toString(); return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; }
+function csvNum(n){ return (+n||0).toFixed(2).replace('.', ','); }
+function download(filename, text){
+  const blob = new Blob(['﻿'+text], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
+function exportJournalCsv(){
+  const y = ui.year;
+  const head = ['Belegnr','Datum','Art','Kategorie','EÜR-wirksam','Konto','Zielkonto','Bezahlt von (privat)','Projekt','Beschreibung','Einnahme','Ausgabe','Umbuchung','Beleg','Storniert','Stornogrund','Erfasst am','Erfasst von','Geändert am','Geändert von','ID','Bezug'];
+  const lines = [head.join(';')];
+  sortRows(state.journal.filter(r=>inYear(r,y)), true).forEach(r=>{
+    lines.push([r.belegnr, deDate(r.datum), artOf(r), r.typ==='Umbuchung'?'Umbuchung':r.kategorie, (!r.storniert&&isEuer(r))?'ja':'nein',
+      accLabel(r.konto), r.zielKonto?accLabel(r.zielKonto):'', r.bezahltVon, projName(r.projektId), r.beschreibung,
+      r.typ==='Einnahme'?csvNum(r.betrag):'', r.typ==='Ausgabe'?csvNum(r.betrag):'', r.typ==='Umbuchung'?csvNum(r.betrag):'',
+      r.belegUrl, r.storniert?'ja':'', r.stornoGrund, r.erfasstAm, r.erfasstVon, r.geaendertAm, r.geaendertVon, r.id, r.bezugId].map(csvCell).join(';'));
+  });
+  download(`STUDIO_KARAT_Journal_${y}.csv`, lines.join('\r\n'));
+}
+function exportEuerCsv(){
+  const y = ui.year; const E = euer(y);
+  const lines = ['Bereich;Kategorie;Betrag'];
+  Object.entries(E.ein).forEach(([k,v])=>lines.push(['Betriebseinnahmen',k,csvNum(v)].map(csvCell).join(';')));
+  lines.push(['Betriebseinnahmen','Summe',csvNum(E.sumE)].join(';'));
+  Object.entries(E.aus).forEach(([k,v])=>lines.push(['Betriebsausgaben',k,csvNum(v)].map(csvCell).join(';')));
+  lines.push(['Betriebsausgaben','Summe',csvNum(E.sumA)].join(';'));
+  lines.push(['Ergebnis',E.ergebnis>=0?'Überschuss':'Verlust',csvNum(E.ergebnis)].join(';'));
+  download(`STUDIO_KARAT_EUER_${y}.csv`, lines.join('\r\n'));
+}
+
+// ============ Migration der Altdaten ============
+const OLD_KAT = { 'Verbrauch':'Material & Verbrauch', 'Kauf':'Material & Verbrauch', 'Leihe':'Leihe & Miete Equipment', 'Anschaffung':'Technik & Geräte (bis 800 € netto)', 'Geschenk':'Geschenke (bis 50 €)' };
+function mapVkKategorie(kat, typ){
+  const k = (kat||'').toLowerCase();
+  if(/umbuch|transfer|wechselgeld|restbudget|übertrag|uebertrag/.test(k)) return { kategorie: typ==='Einnahme'?'Sonstige Einnahmen':'Sonstige Ausgaben', pruefen:true, hinweis:`alte Kategorie „${kat}" – evtl. Umbuchung zwischen eigenen Konten` };
+  if(/miet/.test(k)) return { kategorie: typ==='Einnahme'?'Mietanteile & Raumnutzung':'Miete & Nebenkosten', pruefen:false, hinweis:'' };
+  if(/förder|foerder|zuschuss/.test(k) && typ==='Einnahme') return { kategorie:'Fördermittel & Zuschüsse', pruefen:false, hinweis:'' };
+  if(/eintritt|ticket/.test(k) && typ==='Einnahme') return { kategorie:'Eintritte & Tickets', pruefen:false, hinweis:'' };
+  if(/spende/.test(k) && typ==='Einnahme') return { kategorie:'Spenden', pruefen:false, hinweis:'' };
+  if(/gebühr|gebuehr|versicher|beitrag/.test(k) && typ==='Ausgabe') return { kategorie:'Gebühren, Versicherung & Beiträge', pruefen:false, hinweis:'' };
+  return { kategorie: typ==='Einnahme'?'Sonstige Einnahmen':'Sonstige Ausgaben', pruefen:true, hinweis: kat?`alte Kategorie „${kat}" – passende Kategorie wählen`:'Kategorie wählen' };
+}
+function buildMigration(){
+  const L = state.legacy;
+  const stamp = nowStamp(), who = me();
+  const base = { zielKonto:'', bezahltVon:'', erstattetDurch:'', bezugId:'', belegUrl:'', storniert:false, stornoGrund:'', pruefen:false, hinweis:'', erfasstAm:stamp, erfasstVon:who+' (Übernahme)', geaendertAm:'', geaendertVon:'' };
+  const out = [];
+  const byOld = {};
+  const usedNr = new Set();
+  let maxNr = 0;
+  [...L.buchungen, ...L.vk].forEach(r=>{ const n = parseInt(r.belegnr,10); if(!isNaN(n)) maxNr = Math.max(maxNr, n); });
+  const takeNr = (nr)=>{ let s = nr!==''&&nr!==undefined ? String(nr) : ''; if(/^\d+$/.test(s)) s = s.padStart(4,'0'); if(!s || usedNr.has(s)){ maxNr++; s = String(maxNr).padStart(4,'0'); } usedNr.add(s); return s; };
+  const addHint = (row, h)=>{ row.pruefen = true; row.hinweis = row.hinweis ? row.hinweis+'; '+h : h; };
+
+  L.buchungen.forEach(b=>{
+    const row = Object.assign({}, base, { id: String(b.id||uid()), belegnr: takeNr(b.belegnr), datum: toISO(b.datum), typ:'Ausgabe', betrag: round2(num(b.preis)),
+      projektId: String(b.projektId||''), beschreibung: String(b.ausgabe||''), belegUrl: String(b.belegUrl||'') });
+    const oldKat = String(b.kategorie||'');
+    row.kategorie = OLD_KAT[oldKat] || oldKat || 'Sonstige Ausgaben';
+    if(!OLD_KAT[oldKat]) addHint(row, oldKat?`alte Kategorie „${oldKat}"`:'Kategorie fehlt');
+    if(oldKat==='Anschaffung') addHint(row, 'Anschaffung: über 800 € netto? Dann AfA');
+    if(b.bezahltVon==='ausgeglichen' || !b.bezahltVon){
+      row.konto = String(b.zahlweg||'');
+      if(!ACCOUNTS.includes(row.konto)){ row.konto = 'Vereinskonto'; addHint(row, 'Zahlweg fehlte – Konto prüfen'); }
+    } else {
+      row.konto = 'Privat'; row.bezahltVon = String(b.bezahltVon);
+    }
+    if(!row.datum){ row.datum = today(); addHint(row, 'Datum fehlte'); }
+    byOld[row.id] = row; out.push(row);
+  });
+  L.vk.forEach(v=>{
+    const typ = v.typ==='Einnahme' ? 'Einnahme' : 'Ausgabe';
+    const konto = ACCOUNTS.includes(String(v.konto)) ? String(v.konto) : 'Vereinskonto';
+    const row = Object.assign({}, base, { id: String(v.id||uid()), belegnr: takeNr(v.belegnr), datum: toISO(v.datum), typ, betrag: round2(num(v.betrag)), konto,
+      beschreibung: String(v.beschreibung||''), belegUrl: String(v.belegUrl||''), projektId:'' });
+    if(v.quelleBuchungId && byOld[String(v.quelleBuchungId)]){
+      const src = byOld[String(v.quelleBuchungId)];
+      Object.assign(row, { typ:'Ausgabe', kategorie:'Erstattung Auslage', bezugId: src.id, bezahltVon: src.bezahltVon, projektId: src.projektId });
+      src.erstattetDurch = row.id;
+    } else {
+      const m = mapVkKategorie(String(v.kategorie||''), typ);
+      row.kategorie = m.kategorie; if(m.pruefen) addHint(row, m.hinweis);
+    }
+    if(!row.datum){ row.datum = today(); addHint(row, 'Datum fehlte'); }
+    out.push(row);
+  });
+  // Erstattungen aus ganz alten Versionen ohne verknüpfte Kontobewegung
+  L.buchungen.forEach(b=>{
+    const src = byOld[String(b.id)];
+    if(src && src.konto==='Privat' && truthy(b.erstattet) && !src.erstattetDurch){
+      const via = ACCOUNTS.includes(String(b.erstattetVia)) ? String(b.erstattetVia) : 'Vereinskonto';
+      const row = Object.assign({}, base, { id: uid(), belegnr: takeNr(''), datum: src.datum, typ:'Ausgabe', betrag: src.betrag, konto: via, kategorie:'Erstattung Auslage', bezugId: src.id, bezahltVon: src.bezahltVon, projektId: src.projektId, beschreibung:`Erstattung an ${src.bezahltVon}: ${src.beschreibung}` });
+      addHint(row, 'Erstattungsdatum unbekannt – Datum laut Kontoauszug eintragen');
+      src.erstattetDurch = row.id; out.push(row);
+    }
+  });
+  // Projekt-Einnahmen (bisher nur Summenfelder ohne Datum)
+  Object.values(state.projects).forEach(p=>{
+    const dates = out.filter(r=>r.projektId===p.id && r.datum).map(r=>r.datum).sort();
+    const d = dates[0] || today();
+    [['einnahmenBar','Barkasse','bar'],['einnahmenShop','PayPal','PayPal']].forEach(([f,konto,label])=>{
+      const b = round2(num(p[f]));
+      if(!b) return;
+      const row = Object.assign({}, base, { id: uid(), belegnr: takeNr(''), datum: d, typ:'Einnahme', betrag:b, konto, kategorie:'Eintritte & Tickets', projektId:p.id, beschreibung:`Einnahmen ${label} ${p.name} (Summe aus altem Projektfeld)` });
+      addHint(row, 'war nur eine Summe: Datum, Kategorie prüfen, ggf. in Einzelbuchungen aufteilen');
+      out.push(row);
+    });
+  });
+  return out;
+}
+async function runMigration(){
+  const rows = buildMigration();
+  modal(`<h2>Altdaten übernehmen</h2><p>${rows.length} Buchungen werden ins Journal geschrieben, ${rows.filter(r=>r.pruefen).length} davon mit „prüfen" markiert. Die alten Tabs bleiben unverändert.</p>`, async ()=>{
+    await withBusy('Übernimmt Altdaten…', async ()=>{
+      state.journal = (await readSheet('Journal')).map(normJournal);
+      if(state.journal.length) throw new Error('Im Journal stehen schon Buchungen – Übernahme abgebrochen.');
+      await appendRows('Journal', rows);
+      await protokoll('Übernahme Altdaten', '', null, { anzahl: rows.length });
+      await refresh();
+    });
+    showToast(`${rows.length} Buchungen übernommen`);
+    renderContent();
+  }, 'Übernehmen');
+}
+
+// ============ Aktionen ============
+async function stornoDialog(id){
+  const r = byId(id); if(!r) return;
+  if(isAuslage(r) && !auslageOffen(r)){ showToast('Diese Auslage ist schon erstattet. Zuerst die Erstattung stornieren.', 4500); return; }
+  modal(`<h2>Buchung #${esc(r.belegnr)} stornieren</h2>
+    <p>${esc(r.beschreibung)} · ${eur(r.betrag)}<br>Die Buchung bleibt sichtbar (durchgestrichen), zählt aber nicht mehr. Der Beleg bleibt in Drive.</p>
+    <div class="field"><label>Grund *</label><input type="text" id="m-grund" placeholder="z.B. doppelt erfasst, falscher Betrag"></div>`, async ()=>{
+    const grund = val('m-grund').trim();
+    if(!grund){ showToast('Bitte einen Grund angeben'); return false; }
+    await withBusy('Storniert…', async ()=>{
+      const upd = [Object.assign({}, r, { storniert:true, stornoGrund:grund, geaendertAm:nowStamp(), geaendertVon:me() })];
+      if(isErstattung(r)){
+        r.bezugId.split(',').map(s=>s.trim()).filter(Boolean).forEach(aid=>{ const a = byId(aid); if(a && a.erstattetDurch===r.id) upd.push(Object.assign({}, a, { erstattetDurch:'', geaendertAm:nowStamp(), geaendertVon:me() })); });
+      }
+      await updateRows('Journal', upd);
+      await protokoll('storniert', r.id, r, upd[0]);
+      if(ui.bf.editingId===r.id) ui.bf.editingId = null;
+      await refresh();
+    });
+    renderContent();
+  }, 'Stornieren', true);
+}
+async function erstatten(member, btn){
+  const card = btn.closest('[data-member-card]');
+  const ids = [...card.querySelectorAll('input[data-erst-m]:checked')].map(i=>i.value);
+  if(!ids.length){ showToast('Nichts ausgewählt'); return; }
+  const datum = card.querySelector('[data-erst-datum]').value || today();
+  const konto = card.querySelector('[data-erst-konto]').value;
+  const items = ids.map(byId).filter(Boolean);
+  const sum = round2(items.reduce((s,a)=>s+a.betrag,0));
+  const projekte = [...new Set(items.map(a=>a.projektId))];
+  await withBusy('Speichert…', async ()=>{
+    state.journal = (await readSheet('Journal')).map(normJournal);
+    const fresh = ids.map(byId).filter(a=>a && auslageOffen(a) && !a.storniert);
+    if(fresh.length !== ids.length) throw new Error('Inzwischen hat jemand etwas geändert – bitte neu laden.');
+    const nr = nextBelegnummer();
+    const er = { id:uid(), belegnr:nr, datum, typ:'Ausgabe', betrag:sum, konto, zielKonto:'', kategorie:'Erstattung Auslage', projektId: projekte.length===1?projekte[0]:'',
+      beschreibung:`Erstattung an ${member}: ${fresh.map(a=>'#'+a.belegnr).join(', ')}`, bezahltVon:member, erstattetDurch:'', bezugId: ids.join(','), belegUrl:'', storniert:false, stornoGrund:'', pruefen:false, hinweis:'', erfasstAm:nowStamp(), erfasstVon:me(), geaendertAm:'', geaendertVon:'' };
+    await appendRows('Journal', [er]);
+    await updateRows('Journal', fresh.map(a=>Object.assign({}, a, { erstattetDurch: er.id, geaendertAm:nowStamp(), geaendertVon:me() })));
+    await protokoll('Erstattung', er.id, null, er);
+    await refresh();
+  });
+  showToast(`${eur(sum)} an ${member} erstattet`);
+  renderContent();
+}
+
+function afterRender(){
+  updateBookingForm();
+  document.querySelectorAll('#bf-art button').forEach(b=>b.onclick=()=>{ ui.bf.art = b.dataset.art; updateBookingForm(); });
+  // Filter
+  [['f-konto','konto'],['f-projekt','projekt'],['f-art','art']].forEach(([id,k])=>{ const el=document.getElementById(id); if(el) el.onchange=()=>{ ui.filter[k]=el.value; renderContent(); }; });
+  ['ohneBeleg','pruefen','storno'].forEach(k=>{ const el=document.getElementById('f-'+k); if(el) el.onchange=()=>{ ui.filter[k]=el.checked; renderContent(); }; });
+  const q = document.getElementById('f-q');
+  if(q) q.oninput = ()=>{ ui.filter.q = q.value; clearTimeout(afterRender._q); afterRender._q = setTimeout(()=>{ renderContent(); const n=document.getElementById('f-q'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } }, 250); };
+  const amt = document.getElementById('bf-betrag');
+  if(amt) amt.onblur = ()=>{ if(amt.value.trim()) amt.value = amountInput(round2(parseAmount(amt.value))); };
+}
+
+document.addEventListener('click', async (ev)=>{
+  const el = ev.target.closest('[data-action]');
+  if(!el) return;
+  const a = el.dataset.action;
+  if(el.tagName==='A') ev.preventDefault();
+  try {
+    if(a==='settings') renderSetupForm();
+    else if(a==='signout') signOut();
+    else if(a==='goto-tab') switchTab(el.dataset.tab);
+    else if(a==='goto-konto'){ ui.konto = el.dataset.konto; switchTab('konten'); }
+    else if(a==='goto-journal-problems'){ ui.filter = { konto:'', projekt:'', art:'', q:'', ohneBeleg:false, pruefen:false, storno:false }; const pr = state.journal.some(r=>!r.storniert && r.pruefen && inYear(r)); if(pr) ui.filter.pruefen = true; else ui.filter.ohneBeleg = true; switchTab('journal'); }
+    else if(a==='migrate') await runMigration();
+    else if(a==='bf-save') await saveBooking();
+    else if(a==='bf-cancel'){ ui.bf.editingId = null; ui.bf.art='Ausgabe'; renderContent(); }
+    else if(a==='edit'){ ui.bf.editingId = el.dataset.id; renderContent(); const f=document.getElementById('bf'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'}); }
+    else if(a==='storno') await stornoDialog(el.dataset.id);
+    else if(a==='pick-project'){ ui.projectId = el.dataset.pid; ui.bf.editingId = null; renderContent(); }
+    else if(a==='pick-konto'){ ui.konto = el.dataset.konto; renderContent(); }
+    else if(a==='erstatten') await erstatten(el.dataset.member, el);
+    else if(a==='csv') exportJournalCsv();
+    else if(a==='csv-euer') exportEuerCsv();
+    else if(a==='print') window.print();
+    else if(a==='project-add'){
+      const name = val('new-proj-name').trim(), kuerzel = val('new-proj-kuerzel').trim().toUpperCase(), traeger = val('new-proj-traeger').trim();
+      if(!name || !kuerzel || !traeger){ showToast('Titel, Kürzel und Projektträger sind Pflichtfelder'); return; }
+      const p = { id:uid(), name, kuerzel, traeger, budget: round2(parseAmount(val('new-proj-budget'))), einnahmenBar:0, einnahmenShop:0 };
+      await withBusy('Speichert…', async ()=>{ await appendRows('Projekte', [p]); await protokoll('Projekt neu', p.id, null, p); await refresh(); });
+      ui.projectId = p.id; renderContent();
+    }
+    else if(a==='project-save'){
+      const p = state.projects[ui.projectId];
+      const upd = Object.assign({}, p, { name: val('p-name').trim()||p.name, kuerzel: val('p-kuerzel').trim().toUpperCase()||'ALLG', traeger: val('p-traeger').trim(), budget: round2(parseAmount(val('p-budget'))) });
+      await withBusy('Speichert…', async ()=>{ await updateRows('Projekte', [upd]); await protokoll('Projekt geändert', p.id, p, upd); await refresh(); });
+      renderContent(); showToast('Gespeichert');
+    }
+    else if(a==='project-delete'){
+      const p = state.projects[ui.projectId];
+      const n = state.journal.filter(r=>r.projektId===p.id).length;
+      if(n){ showToast(`Das Projekt hat ${n} Buchung(en) und kann nicht gelöscht werden. Buchungen bleiben für die Steuer erhalten.`, 5000); return; }
+      modal(`<h2>Projekt löschen?</h2><p>„${esc(p.name)}" hat keine Buchungen und wird entfernt.</p>`, async ()=>{
+        await withBusy('Löscht…', async ()=>{ await deleteRowById('Projekte', p.id); await protokoll('Projekt gelöscht', p.id, p, null); await refresh(); });
+        ui.projectId = null; renderContent();
+      }, 'Löschen', true);
+    }
+    else if(a==='konto-save'){
+      const k = ui.konto, old = kontoRow(k);
+      const row = { konto:k, anfang: round2(parseAmount(val('k-anfang'))), anfangDatum: val('k-anfangDatum'), tatsaechlich: round2(parseAmount(val('k-tat'))), tatsaechlichDatum: val('k-tatDatum') };
+      await withBusy('Speichert…', async ()=>{
+        if(state.konten.some(x=>x.konto===k)) await updateRows('Konten', [row], 'konto'); else await appendRows('Konten', [row]);
+        await protokoll('Konto geändert', k, old, row);
+        await refresh();
+      });
+      renderContent(); showToast('Gespeichert');
+    }
+  } catch(err){ console.error(err); }
+});
 
 // ============ Setup- / Sign-in-Screens ============
 function renderSetupForm(){
   const cfg = CONFIG || {};
   const canGoBack = !!(CONFIG && accessToken);
+  const st = state.stamm || {};
   const memberRows = canGoBack ? state.members.map((m,i)=>`
       <div class="member-edit">
-        <input type="text" data-member-idx="${i}" value="${escAttr(m)}" style="min-width:180px;">
+        <input type="text" data-member-idx="${i}" value="${escAttr(m)}">
         <button class="btn danger small" data-del-member="${i}">×</button>
       </div>`).join('') : '';
   document.getElementById('page').innerHTML = `
@@ -934,36 +1443,48 @@ function renderSetupForm(){
         ${canGoBack ? '<button class="btn ghost" id="cfg-back">Zurück, ohne zu speichern</button>' : ''}
       </div>
       ${canGoBack ? `
-        <h3 style="margin-top:26px;">Mitglieder</h3>
+        <h3 style="margin-top:26px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary);">Stammdaten für den Jahresabschluss</h3>
+        <div class="field"><label>Name</label><input type="text" id="st-name" value="${escAttr(st.name||'')}"></div>
+        <div class="field"><label>Anschrift</label><input type="text" id="st-anschrift" value="${escAttr(st.anschrift||'')}"></div>
+        <div class="field"><label>Steuernummer</label><input type="text" id="st-steuernummer" value="${escAttr(st.steuernummer||'')}"></div>
+        <div class="field"><label>Gesellschafter (mit Komma getrennt)</label><input type="text" id="st-gesellschafter" value="${escAttr(st.gesellschafter||'')}"></div>
+        <div class="field"><label>Umsatzsteuer-Status</label><input type="text" id="st-umsatzsteuer" value="${escAttr(st.umsatzsteuer||'')}" placeholder="z.B. Kleinunternehmer nach § 19 UStG"></div>
+        <div class="row-form"><button class="btn ghost" id="save-stamm">Stammdaten speichern</button></div>
+
+        <h3 style="margin-top:26px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary);">Mitglieder</h3>
         <div class="hint">Namen anpassen. Bereits gebuchte Einträge behalten den alten Namen als Text.</div>
         ${memberRows}
         <div class="row-form">
-          <div class="field"><label>Neues Mitglied</label><input type="text" id="new-member-name" style="min-width:180px;"></div>
+          <div class="field" style="margin-bottom:0;"><label>Neues Mitglied</label><input type="text" id="new-member-name" style="min-width:180px;"></div>
           <button class="btn ghost" id="add-member">+ Hinzufügen</button>
         </div>
         <div class="row-form"><button class="btn ghost" id="save-members">Namen speichern</button></div>
       ` : ''}
     </div>`;
   document.getElementById('cfg-save').onclick = ()=>{
-    const clientId = document.getElementById('cfg-client').value.trim();
-    const spreadsheetId = document.getElementById('cfg-sheet').value.trim();
-    const financeFolderId = document.getElementById('cfg-folder').value.trim();
+    const clientId = val('cfg-client').trim();
+    const spreadsheetId = val('cfg-sheet').trim();
+    const financeFolderId = val('cfg-folder').trim();
     if(!clientId || !spreadsheetId){ showToast('Bitte Client-ID und Sheet-ID ausfüllen'); return; }
     const changed = !CONFIG || CONFIG.clientId !== clientId;
     CONFIG = { clientId, spreadsheetId, financeFolderId };
-    localStorage.setItem('karat_config', JSON.stringify(CONFIG));
+    try { localStorage.setItem('karat_config', JSON.stringify(CONFIG)); } catch(e){}
     if(changed || !tokenClient) initGis();
     if(accessToken){ boot(); } else { renderSetupOrSignIn(); }
   };
   const backBtn = document.getElementById('cfg-back');
   if(backBtn) backBtn.onclick = ()=> renderApp();
   if(canGoBack){
-    const addMemberBtn = document.getElementById('add-member');
-    if(addMemberBtn) addMemberBtn.onclick = async ()=>{
-      const val = document.getElementById('new-member-name').value.trim();
-      if(!val) return;
-      const names = [...state.members, val];
-      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
+    document.getElementById('save-stamm').onclick = async ()=>{
+      const keys = ['name','anschrift','steuernummer','gesellschafter','umsatzsteuer'];
+      const rows = keys.map(k=>[k, val('st-'+k).trim()]);
+      Object.keys(state.stamm).filter(k=>!keys.includes(k)).forEach(k=>rows.push([k, state.stamm[k]]));
+      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Stammdaten', rows); await refresh(); });
+      showToast('Gespeichert');
+    };
+    document.getElementById('add-member').onclick = async ()=>{
+      const v = val('new-member-name').trim(); if(!v) return;
+      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', [...state.members, v].map(n=>[n])); await refresh(); });
       renderSetupForm();
     };
     document.querySelectorAll('[data-del-member]').forEach(el=>el.onclick=async()=>{
@@ -971,9 +1492,8 @@ function renderSetupForm(){
       await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
       renderSetupForm();
     });
-    const saveMembersBtn = document.getElementById('save-members');
-    if(saveMembersBtn) saveMembersBtn.onclick = async ()=>{
-      const names = state.members.map((_,i)=>document.querySelector(`[data-member-idx="${i}"]`).value.trim());
+    document.getElementById('save-members').onclick = async ()=>{
+      const names = state.members.map((_,i)=>document.querySelector(`[data-member-idx="${i}"]`).value.trim()).filter(Boolean);
       await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
       renderSetupForm(); showToast('Gespeichert');
     };
@@ -992,12 +1512,15 @@ function renderSignIn(){
       <p style="margin-top:14px;"><a href="#" id="reset-config" style="color:var(--text-tertiary); font-size:12px;">Einrichtung zurücksetzen</a></p>
     </div>`;
   document.getElementById('signin-btn').onclick = ()=> signIn(false);
-  document.getElementById('reset-config').onclick = (e)=>{ e.preventDefault(); localStorage.removeItem('karat_config'); CONFIG=null; renderSetupOrSignIn(); };
+  document.getElementById('reset-config').onclick = (e)=>{ e.preventDefault(); try{ localStorage.removeItem('karat_config'); }catch(_){} CONFIG=null; renderSetupOrSignIn(); };
 }
 
 function renderSetupOrSignIn(){
   if(!CONFIG){ renderSetupForm(); return; }
-  if(!tokenClient) initGis();
+  if(!tokenClient){
+    if(!(window.google && google.accounts && google.accounts.oauth2)){ setTimeout(renderSetupOrSignIn, 150); return; }
+    initGis();
+  }
   if(!accessToken){ renderSignIn(); return; }
   renderApp();
 }
