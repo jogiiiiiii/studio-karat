@@ -77,10 +77,10 @@ nav.tabs button.active{color:var(--rot); border-bottom-color:var(--rot);}
 .card-head h2{margin-bottom:12px;}
 
 .grid{display:grid; gap:16px;}
-.grid.cols-4{grid-template-columns:repeat(4,1fr);}
-.grid.cols-3{grid-template-columns:repeat(3,1fr);}
-.grid.cols-2{grid-template-columns:repeat(2,1fr);}
-@media(max-width:860px){.grid.cols-4{grid-template-columns:repeat(2,1fr);}}
+.grid.cols-4{grid-template-columns:repeat(4,minmax(0,1fr));}
+.grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr));}
+.grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr));}
+@media(max-width:860px){.grid.cols-4{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:720px){.grid.cols-3,.grid.cols-2{grid-template-columns:1fr;}}
 
 .kpi{border:1px solid var(--divide-strong); padding:18px 20px;}
@@ -195,7 +195,7 @@ button.btn:disabled{opacity:.5; cursor:not-allowed;}
 .note{border-left:3px solid var(--orange); background:var(--orange-bg); color:#ffe2b3; padding:12px 14px; font-size:14px; line-height:1.55; margin-bottom:16px;}
 .note.blue{border-left-color:#fff; background:rgba(255,255,255,.06); color:#fff;}
 .note b{color:#fff;}
-.toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:var(--rot); color:#fff; font-weight:600;
+.toast{position:fixed; bottom:calc(22px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); background:var(--rot); color:#fff; font-weight:600;
   padding:11px 20px; font-size:14px; opacity:0; pointer-events:none; transition:opacity .25s; z-index:2000; max-width:90vw; text-align:center;}
 .toast.show{opacity:1;}
 .empty{color:var(--text-tertiary); font-size:14px; padding:16px 0;}
@@ -227,6 +227,100 @@ a.link{color:var(--hellrot); text-decoration:none; font-weight:500;} a.link:hove
 .report table{font-size:13px;}
 .report td{padding:7px 8px;} .report th{padding:7px 8px;}
 .print-only{display:none;}
+
+/* ===== Handy ===== */
+table.mieten td.mname, table.mieten thead th:first-child, table.mieten tr.total td:first-child{position:sticky; left:0; background:var(--petrol); z-index:1;}
+@media (max-width:640px){
+  .page{padding:0 16px calc(60px + env(safe-area-inset-bottom));}
+  .ticker{font-size:13px; padding:9px 0; margin-bottom:14px;}
+  header.top{margin-bottom:14px; align-items:center; gap:10px; flex-wrap:nowrap;}
+  .wordmark{gap:5px; flex-direction:column; align-items:flex-start; flex-wrap:nowrap;}
+  .logo-svg{width:96px;}
+  .kicker{font-size:10.5px; padding-bottom:0;}
+  .account-pill{gap:6px; flex-wrap:nowrap;}
+  .account-pill .acc-mail{display:none;}
+  .account-pill img{width:26px; height:26px;}
+  .account-pill .btn.small{padding:5px 7px; font-size:10px; letter-spacing:.04em;}
+  .navrow{flex-direction:column; align-items:stretch; gap:0; margin:0 -16px 16px; border-bottom:none;}
+  nav.tabs{flex-wrap:nowrap; overflow-x:auto; gap:20px; padding:0 16px; border-bottom:1px solid var(--divide-strong); scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+  nav.tabs::-webkit-scrollbar{display:none;}
+  nav.tabs button{flex:0 0 auto; font-size:13px; padding:12px 0 10px;}
+  .yearpick{padding:10px 16px 0; justify-content:flex-end;}
+  .yearpick select{height:32px;}
+
+  .card{padding:16px; margin-bottom:14px;}
+  .card h2{font-size:14px; margin-bottom:12px;}
+  .card-head{flex-direction:column; align-items:stretch; gap:8px;}
+  .card-head .row-form{margin-top:0;}
+  .grid{gap:10px;}
+  .grid.cols-3, .grid.cols-2{grid-template-columns:minmax(0,1fr);}
+  .kpi{padding:13px 14px;}
+  .kpi .label{font-size:10.5px;}
+  .kpi .value{font-size:21px; overflow-wrap:anywhere;}
+  .kpi .sub{font-size:11.5px; line-height:1.35;}
+  .note{font-size:13.5px; padding:10px 12px;}
+
+  input, select{font-size:16px;}
+  input[type=date], input[type=month]{-webkit-appearance:none; appearance:none; display:block; min-width:0; max-width:100%; text-align:left; line-height:var(--field-h);}
+  input::-webkit-date-and-time-value{text-align:left;}
+  .form-grid{grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:12px;}
+  .form-grid .span2, .form-grid > .btn, .form-grid > label.check{grid-column:1 / -1;}
+  .form-grid .field label{font-size:10.5px;}
+  .seg{display:grid; grid-template-columns:1fr 1fr; width:100%; gap:1px; background:var(--divide-strong);}
+  .seg button{background:var(--petrol); padding:10px 6px; font-size:12px;}
+  .seg button + button{border-left:none;}
+  .seg button.active{background:var(--rot);}
+  .row-form{gap:8px;}
+  .row-form > select, .row-form > input[type=text]{flex:1 1 40%; min-width:0;}
+  .row-form > .btn{flex:1 1 auto;}
+  #bf .row-form .btn{flex:1;}
+
+  .tablewrap{margin:0; padding:0;}
+  table{font-size:13px;}
+  th{font-size:10px; padding:8px 6px;}
+  td{padding:9px 6px;}
+  tbody tr:hover td{background:none;}
+
+  /* Buchungen als Karten */
+  table.jt thead{display:none;}
+  table.jt, table.jt tbody{display:block;}
+  table.jt tr{display:flex; flex-wrap:wrap; align-items:center; column-gap:10px; row-gap:6px; padding:14px 0; border-bottom:1px solid var(--divide);}
+  table.jt tr:last-child{border-bottom:none;}
+  table.jt td{padding:0; border:none; min-width:0;}
+  table.jt td.nr{order:1;} table.jt td.date{order:2; color:var(--text-secondary); font-size:12.5px;}
+  table.jt td.amt{order:3; margin-left:auto; font-size:15px; font-weight:700;}
+  table.jt td.desc{order:4; flex:0 0 100%; font-size:14.5px;}
+  table.jt td.kto{order:5; font-size:12.5px; color:var(--text-secondary);}
+  table.jt td.st{order:6;} table.jt td.bel{order:7; font-size:12.5px;}
+  table.jt td .dash{display:none;}
+  table.jt td.st:empty{display:none;}
+  table.jt td.actions{order:8; margin-left:auto; display:flex; gap:2px;}
+  table.jt td.actions:empty{display:none;}
+  table.jt td.actions .btn.small{border:none; padding:4px 6px; font-size:10.5px; color:var(--text-secondary); background:none;}
+  table.jt td.actions .btn.danger.small{color:var(--hellrot);}
+  table.jt tr.editing{background:var(--blue-bg); margin:0 -8px; padding:13px 8px;}
+
+  /* Kontoauszug als Karten */
+  table.lt thead{display:none;}
+  table.lt, table.lt tbody{display:block;}
+  table.lt tr{display:grid; grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"nr date saldo" "desc desc desc" "zu ab bel"; column-gap:10px; row-gap:4px; padding:11px 0; border-bottom:1px solid var(--divide);}
+  table.lt td{padding:0; border:none; min-width:0;}
+  table.lt td.nr{grid-area:nr;} table.lt td.date{grid-area:date; color:var(--text-secondary); font-size:12.5px;}
+  table.lt td.saldo{grid-area:saldo;} table.lt td.desc{grid-area:desc;}
+  table.lt td.zu{grid-area:zu; text-align:left;} table.lt td.ab{grid-area:ab; text-align:left;} table.lt td.bel{grid-area:bel; text-align:right;}
+  table.lt tr.sub, table.lt tr.total{display:flex; justify-content:space-between; gap:10px;}
+  table.lt tr.sub td:empty, table.lt tr.total td:empty{display:none;}
+
+  /* Mieten: Tabelle wischen, Name bleibt stehen */
+  table.mieten{font-size:12.5px;}
+  table.mieten td.mname{max-width:110px; white-space:normal; line-height:1.25;}
+  table.mieten input{width:66px !important; font-size:14px; height:30px !important; padding:0 6px;}
+
+  .modal-bg{align-items:flex-end; padding:0;}
+  .modal{max-width:none; padding:20px 16px calc(20px + env(safe-area-inset-bottom)); border-left:none; border-right:none; border-bottom:none;}
+  .setup-card{margin:20px auto; padding:20px 16px;}
+  .report h1{font-size:22px;}
+}
 
 @media print{
   :root{ --bg:#fff; --text:#111; --text-secondary:#555; --text-tertiary:#888; --divide:#ddd; --divide-strong:#999; --surface2:#f4f4f4; }
@@ -771,7 +865,7 @@ function renderApp(){
       </div>
       <div class="account-pill">
         ${userInfo && userInfo.picture ? `<img src="${escAttr(userInfo.picture)}" alt="">` : ''}
-        <span>${userInfo ? esc(userInfo.email) : ''}</span>
+        <span class="acc-mail">${userInfo ? esc(userInfo.email) : ''}</span>
         <button class="btn ghost small" data-action="settings">Einstellungen</button>
         <button class="btn ghost small" data-action="signout">Abmelden</button>
       </div>
@@ -794,6 +888,7 @@ function renderTabs(){
   const nav = document.getElementById('tabs');
   nav.innerHTML = TABS.map(t=>`<button class="${ui.tab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
   nav.querySelectorAll('button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+  const act = nav.querySelector('.active'); if(act && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = Math.max(0, act.offsetLeft - 16);
 }
 function switchTab(id){ ui.tab = id; ui.bf.editingId = null; renderTabs(); renderContent(); window.scrollTo(0,0); }
 
@@ -992,20 +1087,20 @@ function journalTable(rows, opts){
     if(!r.storniert && isAuslage(r)) status += auslageOffen(r) ? `<span class="badge warn">offen</span> ` : `<span class="badge settled">erstattet</span> `;
     if(!r.storniert && isErstattung(r)) status += `<span class="badge grey">Erstattung</span> `;
     if(!r.storniert && !isEuer(r) && !isErstattung(r)) status += `<span class="badge grey">neutral</span> `;
-    const beleg = r.belegUrl ? `<a class="link" href="${escAttr(r.belegUrl)}" target="_blank" rel="noopener">ansehen</a>` : (needsBeleg(r) ? '<span class="badge warn">fehlt</span>' : '—');
+    const beleg = r.belegUrl ? `<a class="link" href="${escAttr(r.belegUrl)}" target="_blank" rel="noopener">Beleg</a>` : (needsBeleg(r) ? '<span class="badge warn">Beleg fehlt</span>' : '<span class="dash">—</span>');
     const canEdit = !r.storniert;
     return `<tr class="${r.storniert?'storno':''} ${ui.bf.editingId===r.id?'editing':''}">
       <td class="nr">${esc(r.belegnr)}</td>
       <td class="date">${deDate(r.datum)}</td>
       <td class="desc">${esc(r.beschreibung)}<span class="small">${esc(art==='Umbuchung'?'Umbuchung':r.kategorie)}${r.typ==='Einnahme'&&r.bezahltVon?' · von '+esc(r.bezahltVon):''}${r.zeitraum?' · für '+esc(monatLabel(r.zeitraum)):''}${!opts.hideProject && r.projektId?' · '+esc(projName(r.projektId)):''}${r.storniert&&r.stornoGrund?' · Storno: '+esc(r.stornoGrund):''}</span></td>
-      <td>${kontoTxt}</td>
-      <td class="num ${sign}">${r.typ==='Ausgabe'?'−':''}${eur(r.betrag)}</td>
-      <td>${status}</td>
-      <td>${beleg}</td>
+      <td class="kto">${kontoTxt}</td>
+      <td class="num amt ${sign}">${r.typ==='Ausgabe'?'−':''}${eur(r.betrag)}</td>
+      <td class="st">${status}</td>
+      <td class="bel">${beleg}</td>
       <td class="actions">${canEdit?`<button class="btn ghost small" data-action="edit" data-id="${r.id}">Bearbeiten</button> <button class="btn danger small" data-action="storno" data-id="${r.id}">Storno</button>`:''}</td>
     </tr>`;
   }).join('');
-  return `<div class="tablewrap"><table><thead><tr><th>Nr.</th><th>Datum</th><th>Beschreibung</th><th>Konto</th><th class="num">Betrag</th><th>Status</th><th>Beleg</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="tablewrap"><table class="jt"><thead><tr><th>Nr.</th><th>Datum</th><th>Beschreibung</th><th>Konto</th><th class="num">Betrag</th><th>Status</th><th>Beleg</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 function sortRows(rows, asc){
   return rows.slice().sort((a,b)=>{ const d = (a.datum||'').localeCompare(b.datum||''); if(d) return asc?d:-d; const n = (parseInt(a.belegnr)||0)-(parseInt(b.belegnr)||0); return asc?n:-n; });
@@ -1115,8 +1210,8 @@ function renderKonten(){
     const gegen = r.typ==='Umbuchung' ? (r.konto===k ? `→ ${accLabel(r.zielKonto)}` : `← ${accLabel(r.konto)}`) : (isErstattung(r) ? `an ${esc(r.bezahltVon)}` : esc(r.kategorie));
     return `<tr><td class="nr">${esc(r.belegnr)}</td><td class="date">${deDate(r.datum)}</td>
       <td class="desc">${esc(r.beschreibung)}<span class="small">${gegen}${r.projektId?' · '+esc(projName(r.projektId)):''}</span></td>
-      <td class="num pos">${e>0?eur(e):''}</td><td class="num neg">${e<0?eur(-e):''}</td><td class="num"><b>${eur(saldo)}</b></td>
-      <td>${r.belegUrl?`<a class="link" href="${escAttr(r.belegUrl)}" target="_blank" rel="noopener">Beleg</a>`:''}</td></tr>`;
+      <td class="num pos zu">${e>0?'+'+eur(e):''}</td><td class="num neg ab">${e<0?'−'+eur(-e):''}</td><td class="num saldo"><b>${eur(saldo)}</b></td>
+      <td class="bel">${r.belegUrl?`<a class="link" href="${escAttr(r.belegUrl)}" target="_blank" rel="noopener">Beleg</a>`:''}</td></tr>`;
   }).join('');
   const abglBal = kr.tatsaechlichDatum ? balanceAt(k, nextDay(kr.tatsaechlichDatum)) : balanceAt(k, null);
   const diff = round2(kr.tatsaechlich - abglBal);
@@ -1134,7 +1229,7 @@ function renderKonten(){
     <div class="card">
       <h2>Kontoauszug ${accLabel(k)} ${y==='alle'?'':y}</h2>
       ${ignored?`<div class="note">${ignored} Buchung${ignored>1?'en liegen':' liegt'} vor dem Startdatum ${deDate(kr.anfangDatum)} und ${ignored>1?'zählen':'zählt'} nicht in den Saldo.</div>`:''}
-      ${rows.length ? `<div class="tablewrap"><table><thead><tr><th>Nr.</th><th>Datum</th><th>Beschreibung</th><th class="num">Zugang</th><th class="num">Abgang</th><th class="num">Saldo</th><th></th></tr></thead>
+      ${rows.length ? `<div class="tablewrap"><table class="lt"><thead><tr><th>Nr.</th><th>Datum</th><th>Beschreibung</th><th class="num">Zugang</th><th class="num">Abgang</th><th class="num">Saldo</th><th></th></tr></thead>
         <tbody><tr class="sub"><td></td><td class="date">${from?deDate(from):(kr.anfangDatum?deDate(kr.anfangDatum):'')}</td><td>${from?'Übertrag':'Anfangsbestand'}</td><td></td><td></td><td class="num">${eur(J.start)}</td><td></td></tr>${body}
         <tr class="total"><td></td><td></td><td>Endstand</td><td class="num pos">${eur(J.zu)}</td><td class="num neg">${eur(J.ab)}</td><td class="num">${eur(J.ende)}</td><td></td></tr></tbody></table></div>`
         : `<div class="empty">Keine Bewegungen auf diesem Konto im gewählten Zeitraum.</div>`}
