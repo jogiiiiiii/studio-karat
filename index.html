@@ -140,6 +140,15 @@ input:focus, select:focus{border-color:var(--rot); background-color:rgba(255,255
 input.amount{font-variant-numeric:tabular-nums; text-align:right;}
 input[type=file]{height:auto; padding:8px; font-size:13px;}
 .field .filebox{text-transform:none; letter-spacing:0; font-weight:400; color:#fff; font-size:13.5px;}
+table.mieten th, table.mieten td{padding:8px 6px;}
+table.mieten td.mname{white-space:nowrap; font-weight:600;}
+.mcell{text-align:center; cursor:pointer; font-variant-numeric:tabular-nums; font-size:13px; min-width:44px; transition:background .12s;}
+.mcell:hover{background:var(--blue-bg) !important;}
+.mcell.m-ok{color:#fff; font-weight:600;}
+.mcell.m-part{color:var(--orange); font-weight:600;}
+.mcell.m-open{color:var(--hellrot); font-size:11px; text-transform:uppercase; letter-spacing:.04em;}
+.mcell.m-fut{color:var(--text-tertiary);}
+th.m-now{color:var(--rot);}
 .filebox{position:relative; display:flex; align-items:center; gap:12px; height:var(--field-h); padding:0 12px 0 5px; border:1px dashed var(--divide-strong); background:var(--surface2); cursor:pointer; min-width:0; transition:border-color .15s, background .15s;}
 .filebox:hover, .filebox.drag{border-color:var(--rot); background:rgba(255,255,255,.1);}
 .filebox input{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;}
@@ -260,10 +269,10 @@ let CONFIG = (()=>{ try { return JSON.parse(localStorage.getItem('karat_config')
 // Spalten werden über die Kopfzeile zugeordnet, nicht über die Position.
 // Fehlende Spalten hängt die App hinten an, vorhandene Daten bleiben unberührt.
 const SHEET_DEFS = {
-  Journal:    ['id','belegnr','datum','typ','betrag','konto','zielKonto','kategorie','projektId','beschreibung','bezahltVon','erstattetDurch','bezugId','belegUrl','storniert','stornoGrund','pruefen','hinweis','erfasstAm','erfasstVon','geaendertAm','geaendertVon'],
+  Journal:    ['id','belegnr','datum','typ','betrag','konto','zielKonto','kategorie','projektId','beschreibung','bezahltVon','erstattetDurch','bezugId','belegUrl','storniert','stornoGrund','pruefen','hinweis','erfasstAm','erfasstVon','geaendertAm','geaendertVon','zeitraum'],
   Projekte:   ['id','name','kuerzel','traeger','budget','einnahmenBar','einnahmenShop'],
   Konten:     ['konto','anfang','tatsaechlich','anfangDatum','tatsaechlichDatum'],
-  Mitglieder: ['name'],
+  Mitglieder: ['name','mietanteil'],
   Stammdaten: ['schluessel','wert'],
   Protokoll:  ['zeit','nutzer','aktion','id','vorher','nachher'],
 };
@@ -617,6 +626,7 @@ function normJournal(r){
   r.pruefen = truthy(r.pruefen);
   ['id','belegnr','typ','konto','zielKonto','kategorie','projektId','beschreibung','bezahltVon','erstattetDurch','bezugId','belegUrl','stornoGrund','hinweis'].forEach(k=>{ r[k] = (r[k]===undefined||r[k]===null) ? '' : String(r[k]); });
   if(/^\d+$/.test(r.belegnr) && r.belegnr.length < 4) r.belegnr = r.belegnr.padStart(4,'0');
+  r.zeitraum = (()=>{ const z = r.zeitraum; if(z===''||z===undefined||z===null) return ''; if(typeof z==='number') return toISO(z).slice(0,7); const m = String(z).match(/^(\d{4})-(\d{1,2})/); return m ? `${m[1]}-${pad(m[2])}` : ''; })();
   return r;
 }
 
@@ -631,6 +641,7 @@ async function refresh(){
   projekte.forEach(p=>{ p.id = String(p.id); p.budget = num(p.budget); state.projects[p.id] = p; state.projectOrder.push(p.id); });
   state.konten = konten.map(k=>Object.assign(k, { anfang: num(k.anfang), tatsaechlich: num(k.tatsaechlich), anfangDatum: toISO(k.anfangDatum), tatsaechlichDatum: toISO(k.tatsaechlichDatum) }));
   state.members = mitglieder.map(m=>String(m.name)).filter(Boolean);
+  state.memberSoll = {}; mitglieder.forEach(m=>{ if(m.name) state.memberSoll[String(m.name)] = round2(num(m.mietanteil)); });
   state.stamm = {}; stamm.forEach(s=>{ state.stamm[String(s.schluessel)] = String(s.wert ?? ''); });
   state.legacy = { buchungen:[], vk:[], present: legacyPresent.length>0 };
   legacyPresent.forEach((n,i)=>{ if(n==='Buchungen') state.legacy.buchungen = legacy[i]; else state.legacy.vk = legacy[i]; });
@@ -721,7 +732,7 @@ function years(){
   state.journal.forEach(r=>{ if(/^\d{4}/.test(r.datum)) set.add(r.datum.slice(0,4)); });
   return [...set].sort().reverse();
 }
-function needsBeleg(r){ return !r.storniert && isEuer(r) && !r.belegUrl; }
+function needsBeleg(r){ return !r.storniert && isEuer(r) && !r.belegUrl && !(r.typ==='Einnahme' && r.konto!=='Barkasse'); }
 function artOf(r){
   if(r.typ==='Umbuchung') return 'Umbuchung';
   if(isErstattung(r)) return 'Erstattung';
@@ -736,6 +747,7 @@ const TABS = [
   {id:'projekte', label:'Projekte'},
   {id:'konten', label:'Konten'},
   {id:'auslagen', label:'Auslagen'},
+  {id:'mieten', label:'Mieten'},
   {id:'abschluss', label:'Jahresabschluss'},
 ];
 
@@ -778,7 +790,7 @@ function switchTab(id){ ui.tab = id; ui.bf.editingId = null; renderTabs(); rende
 
 function renderContent(){
   const c = document.getElementById('content');
-  const views = { uebersicht:renderUebersicht, journal:renderJournal, projekte:renderProjekte, konten:renderKonten, auslagen:renderAuslagen, abschluss:renderAbschluss };
+  const views = { uebersicht:renderUebersicht, journal:renderJournal, projekte:renderProjekte, konten:renderKonten, auslagen:renderAuslagen, mieten:renderMieten, abschluss:renderAbschluss };
   c.innerHTML = views[ui.tab]();
   afterRender();
 }
@@ -853,6 +865,8 @@ function bookingForm(opts){
       <div class="field"><label>Datum (Zahlung)</label><input type="date" id="bf-datum" value="${escAttr(e.datum||today())}"></div>
       <div class="field"><label>Betrag €</label><input type="text" inputmode="decimal" class="amount" id="bf-betrag" placeholder="0,00" value="${editing?amountInput(e.betrag):''}"></div>
       <div class="field" data-show="Einnahme Ausgabe"><label id="bf-konto-label">Konto</label><select id="bf-konto">${accOpts(e.konto && e.konto!=='Privat' ? e.konto : 'Vereinskonto')}</select></div>
+      <div class="field" data-show="Einnahme"><label>Von (Person)</label><select id="bf-vonperson"><option value="">– extern / niemand –</option>${members.map(m=>`<option ${e.typ==='Einnahme'&&e.bezahltVon===m?'selected':''}>${esc(m)}</option>`).join('')}</select></div>
+      <div class="field" data-show="Einnahme"><label>Für Monat (bei Mieten)</label><input type="month" id="bf-zeitraum" value="${escAttr(e.zeitraum||'')}"></div>
       <div class="field" data-show="Auslage"><label>Bezahlt von (privat)</label><select id="bf-person"><option value="">– wer? –</option>${members.map(m=>`<option ${e.bezahltVon===m?'selected':''}>${esc(m)}</option>`).join('')}</select></div>
       <div class="field" data-show="Umbuchung"><label>Von Konto</label><select id="bf-von">${accOpts(e.konto||'PayPal')}</select></div>
       <div class="field" data-show="Umbuchung"><label>Nach Konto</label><select id="bf-nach">${accOpts(e.zielKonto||'Vereinskonto')}</select></div>
@@ -894,6 +908,16 @@ function updateBookingForm(){
   const kl = document.getElementById('bf-konto-label'); if(kl) kl.textContent = art==='Einnahme' ? 'Eingang auf' : 'Bezahlt über';
   const h = document.getElementById('bf-hint'); if(h) h.textContent = BF_HINTS[art] || '';
 }
+// Neue Buchung anlegen: frische Belegnummer, falls parallel jemand gebucht hat
+async function createBooking(row, file, kuerzel){
+  state.journal = (await readSheet('Journal')).map(normJournal);
+  const nr = nextBelegnummer();
+  const neu = Object.assign({ id: uid(), belegnr: nr, zielKonto:'', bezahltVon:'', projektId:'', zeitraum:'', erstattetDurch:'', bezugId:'', belegUrl:'', storniert:false, stornoGrund:'', pruefen:false, hinweis:'', erfasstAm: nowStamp(), erfasstVon: me(), geaendertAm:'', geaendertVon:'' }, row);
+  if(file) neu.belegUrl = await storeBeleg(file, neu, kuerzel);
+  await appendRows('Journal', [neu]);
+  await protokoll('neu', neu.id, null, neu);
+  return neu;
+}
 async function saveBooking(){
   const editing = ui.bf.editingId ? byId(ui.bf.editingId) : null;
   const art = ui.bf.art;
@@ -902,9 +926,13 @@ async function saveBooking(){
   const betrag = round2(parseAmount(raw));
   const beschreibung = val('bf-beschreibung').trim();
   if(!(betrag > 0)){ showToast('Betrag fehlt oder ist ungültig (z.B. 12,50)'); return; }
-  if(!beschreibung){ showToast('Bitte eine Beschreibung angeben'); return; }
-  let row = { datum, betrag, beschreibung };
-  if(art==='Einnahme' || art==='Ausgabe'){
+  let beschreibung2 = beschreibung;
+  if(!beschreibung2 && art==='Einnahme' && val('bf-vonperson')) beschreibung2 = autoBeschreibung(val('bf-kat'), val('bf-vonperson'), val('bf-zeitraum'));
+  if(!beschreibung2){ showToast('Bitte eine Beschreibung angeben'); return; }
+  let row = { datum, betrag, beschreibung: beschreibung2, zeitraum:'' };
+  if(art==='Einnahme'){
+    Object.assign(row, { typ:art, konto:val('bf-konto'), zielKonto:'', bezahltVon:val('bf-vonperson'), zeitraum:val('bf-zeitraum'), kategorie:val('bf-kat'), projektId:val('bf-projekt') });
+  } else if(art==='Ausgabe'){
     Object.assign(row, { typ:art, konto:val('bf-konto'), zielKonto:'', bezahltVon:'', kategorie:val('bf-kat'), projektId:val('bf-projekt') });
   } else if(art==='Auslage'){
     const person = val('bf-person');
@@ -915,7 +943,7 @@ async function saveBooking(){
     if(von===nach){ showToast('Von- und Nach-Konto sind gleich'); return; }
     Object.assign(row, { typ:'Umbuchung', konto:von, zielKonto:nach, bezahltVon:'', kategorie:'Umbuchung', projektId:'' });
   } else if(art==='Erstattung'){
-    row = { datum, beschreibung, konto: val('bf-konto') };
+    row = { datum, beschreibung: beschreibung2, konto: val('bf-konto') };
     if(editing && Math.abs(betrag - editing.betrag) > 0.001){ showToast('Betrag einer Erstattung nicht ändern – stornieren und neu erstatten.', 4500); return; }
   }
   if(['Einnahme','Ausgabe','Auslage'].includes(art) && !row.kategorie){ showToast('Bitte eine Kategorie wählen'); return; }
@@ -933,14 +961,8 @@ async function saveBooking(){
       await protokoll('geändert', updated.id, editing, updated);
       ui.bf.editingId = null;
     } else {
-      // frische Belegnummer, falls parallel jemand gebucht hat
-      state.journal = (await readSheet('Journal')).map(normJournal);
-      const nr = nextBelegnummer();
-      const neu = Object.assign({ id: uid(), belegnr: nr, erstattetDurch:'', bezugId:'', belegUrl:'', storniert:false, stornoGrund:'', pruefen:false, hinweis:'', erfasstAm: nowStamp(), erfasstVon: me(), geaendertAm:'', geaendertVon:'' }, row);
-      if(file) neu.belegUrl = await storeBeleg(file, neu, kuerzel);
-      await appendRows('Journal', [neu]);
-      await protokoll('neu', neu.id, null, neu);
-      showToast(`Gebucht als #${nr}`);
+      const neu = await createBooking(row, file, kuerzel);
+      showToast(`Gebucht als #${neu.belegnr}`);
     }
     await refresh();
   });
@@ -966,7 +988,7 @@ function journalTable(rows, opts){
     return `<tr class="${r.storniert?'storno':''} ${ui.bf.editingId===r.id?'editing':''}">
       <td class="nr">${esc(r.belegnr)}</td>
       <td class="date">${deDate(r.datum)}</td>
-      <td class="desc">${esc(r.beschreibung)}<span class="small">${esc(art==='Umbuchung'?'Umbuchung':r.kategorie)}${!opts.hideProject && r.projektId?' · '+esc(projName(r.projektId)):''}${r.storniert&&r.stornoGrund?' · Storno: '+esc(r.stornoGrund):''}</span></td>
+      <td class="desc">${esc(r.beschreibung)}<span class="small">${esc(art==='Umbuchung'?'Umbuchung':r.kategorie)}${r.typ==='Einnahme'&&r.bezahltVon?' · von '+esc(r.bezahltVon):''}${r.zeitraum?' · für '+esc(monatLabel(r.zeitraum)):''}${!opts.hideProject && r.projektId?' · '+esc(projName(r.projektId)):''}${r.storniert&&r.stornoGrund?' · Storno: '+esc(r.stornoGrund):''}</span></td>
       <td>${kontoTxt}</td>
       <td class="num ${sign}">${r.typ==='Ausgabe'?'−':''}${eur(r.betrag)}</td>
       <td>${status}</td>
@@ -1249,11 +1271,11 @@ function download(filename, text){
 }
 function exportJournalCsv(){
   const y = ui.year;
-  const head = ['Belegnr','Datum','Art','Kategorie','EÜR-wirksam','Konto','Zielkonto','Bezahlt von (privat)','Projekt','Beschreibung','Einnahme','Ausgabe','Umbuchung','Beleg','Storniert','Stornogrund','Erfasst am','Erfasst von','Geändert am','Geändert von','ID','Bezug'];
+  const head = ['Belegnr','Datum','Art','Kategorie','EÜR-wirksam','Konto','Zielkonto','Person (privat bezahlt / eingezahlt von)','Für Monat','Projekt','Beschreibung','Einnahme','Ausgabe','Umbuchung','Beleg','Storniert','Stornogrund','Erfasst am','Erfasst von','Geändert am','Geändert von','ID','Bezug'];
   const lines = [head.join(';')];
   sortRows(state.journal.filter(r=>inYear(r,y)), true).forEach(r=>{
     lines.push([r.belegnr, deDate(r.datum), artOf(r), r.typ==='Umbuchung'?'Umbuchung':r.kategorie, (!r.storniert&&isEuer(r))?'ja':'nein',
-      accLabel(r.konto), r.zielKonto?accLabel(r.zielKonto):'', r.bezahltVon, projName(r.projektId), r.beschreibung,
+      accLabel(r.konto), r.zielKonto?accLabel(r.zielKonto):'', r.bezahltVon, r.zeitraum?monatLabel(r.zeitraum):'', projName(r.projektId), r.beschreibung,
       r.typ==='Einnahme'?csvNum(r.betrag):'', r.typ==='Ausgabe'?csvNum(r.betrag):'', r.typ==='Umbuchung'?csvNum(r.betrag):'',
       r.belegUrl, r.storniert?'ja':'', r.stornoGrund, r.erfasstAm, r.erfasstVon, r.geaendertAm, r.geaendertVon, r.id, r.bezugId].map(csvCell).join(';'));
   });
@@ -1365,6 +1387,140 @@ async function runMigration(){
   }, 'Übernehmen');
 }
 
+
+// ============ Mieten ============
+const MONATE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const MONATE_KURZ = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+const MIET_KAT = 'Mietanteile & Raumnutzung';
+function monatLabel(z){ const m = (z||'').match(/^(\d{4})-(\d{2})/); return m ? `${MONATE[+m[2]-1]} ${m[1]}` : (z||''); }
+function memberRowsFor(names){ return names.map(n=>[n, state.memberSoll[n] || '']); }
+function autoBeschreibung(kat, person, z){
+  const was = kat===MIET_KAT ? 'Mietanteil' : (kat==='Einlage Gesellschafter' ? 'Einlage' : 'Einzahlung');
+  return `${was}${z?' '+monatLabel(z):''} – ${person}`;
+}
+function hasWord(text, word){
+  const w = word.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return new RegExp(`(^|[^a-zäöüß])${w}([^a-zäöüß]|$)`).test(text.toLowerCase());
+}
+function guessPerson(r){
+  if(r.bezahltVon) return r.bezahltVon;
+  const t = r.beschreibung || '';
+  const full = state.members.filter(m=>hasWord(t, m)).sort((a,b)=>b.length-a.length);
+  if(full.length) return full[0];
+  const part = state.members.filter(m=>m.split(/\s+/).some(p=>p.length>2 && hasWord(t, p)));
+  return part.length===1 ? part[0] : '';
+}
+function guessZeitraum(r){
+  if(r.zeitraum) return r.zeitraum;
+  const t = r.beschreibung || '';
+  const y = +(r.datum||'').slice(0,4), dm = +(r.datum||'').slice(5,7);
+  for(let i=0;i<12;i++){
+    if(hasWord(t, MONATE[i]) || hasWord(t, MONATE_KURZ[i]) || (i===2 && hasWord(t,'maerz'))){
+      let yy = y; const mm = i+1;
+      if(mm - dm > 6) yy--; else if(dm - mm > 6) yy++;
+      const ym = t.match(/(20\d\d)/); if(ym) yy = +ym[1];
+      return `${yy}-${pad(mm)}`;
+    }
+  }
+  return (r.datum||'').slice(0,7);
+}
+function mietZahlungen(){
+  return active().filter(r=>r.typ==='Einnahme' && (r.kategorie===MIET_KAT || (r.zeitraum && r.kategorie==='Einlage Gesellschafter')))
+    .map(r=>({ r, person: guessPerson(r), z: guessZeitraum(r), geraten: !r.bezahltVon || !r.zeitraum }));
+}
+function renderMieten(){
+  const y = ui.year==='alle' ? String(new Date().getFullYear()) : ui.year;
+  const zs = MONATE.map((_,i)=>`${y}-${pad(i+1)}`);
+  const heute = today().slice(0,7);
+  const pays = mietZahlungen();
+  const inYear = pays.filter(p=>p.z.slice(0,4)===y);
+  const persons = [...new Set([...state.members.filter(m=>state.memberSoll[m]>0), ...inYear.filter(p=>p.person).map(p=>p.person)])];
+  const sumFor = (person, z)=> round2(inYear.filter(p=>p.person===person && p.z===z).reduce((s,p)=>s+p.r.betrag,0));
+  let totalOffen = 0;
+  const rows = persons.map(m=>{
+    const soll = state.memberSoll[m] || 0;
+    const ersteZ = pays.filter(p=>p.person===m).map(p=>p.z).sort()[0] || heute;
+    let gezahlt = 0, faellig = 0;
+    const cells = zs.map(z=>{
+      const v = sumFor(m, z); gezahlt += v;
+      const due = z <= heute && z >= ersteZ; if(due) faellig += soll;
+      let cls = 'm-fut';
+      if(v>0 && (soll===0 || v >= soll-0.005)) cls = 'm-ok';
+      else if(v>0) cls = 'm-part';
+      else if(due && soll>0) cls = 'm-open';
+      const label = v>0 ? amountInput(v).replace(/,00$/,'') : (cls==='m-open' ? 'offen' : '·');
+      return `<td class="mcell ${cls}" data-action="miete-buchen" data-person="${escAttr(m)}" data-z="${z}" title="${escAttr(m)} · ${monatLabel(z)}${v?': '+eur(v):''}">${label}</td>`;
+    }).join('');
+    const offen = round2(Math.max(0, faellig - gezahlt)); totalOffen += offen;
+    const isMember = state.members.includes(m);
+    return `<tr><td class="mname">${esc(m)}</td>
+      <td>${isMember?`<input type="text" inputmode="decimal" class="amount" data-soll="${escAttr(m)}" value="${soll?amountInput(soll):''}" placeholder="0,00" style="width:84px; height:32px;">`:'<span class="hint">kein Mitglied</span>'}</td>
+      ${cells}<td class="num"><b>${eur(gezahlt)}</b></td><td class="num ${offen>0?'neg':''}">${offen?eur(offen):'—'}</td></tr>`;
+  }).join('');
+  const colSum = zs.map(z=>`<td class="num">${(v=>v?amountInput(v).replace(/,00$/,''):'')(round2(inYear.filter(p=>p.z===z).reduce((s,p)=>s+p.r.betrag,0)))}</td>`).join('');
+  const mieteAus = zs.map(z=>`<td class="num">${(v=>v?amountInput(v).replace(/,00$/,''):'')(round2(active().filter(r=>r.typ==='Ausgabe' && r.kategorie==='Miete & Nebenkosten' && (r.datum||'').slice(0,7)===z).reduce((s,r)=>s+r.betrag,0)))}</td>`).join('');
+  const sollSum = round2(persons.reduce((s,m)=>s+(state.memberSoll[m]||0),0));
+  const geraten = pays.filter(p=>p.geraten && p.person);
+  const ohne = pays.filter(p=>!p.person && p.z.slice(0,4)===y);
+  const head = zs.map((z,i)=>`<th class="num ${z===heute?'m-now':''}">${MONATE_KURZ[i]}</th>`).join('');
+  return `
+    ${geraten.length ? `<div class="note blue">${geraten.length} Mietzahlung${geraten.length>1?'en hat':' hat'} die App über Name und Monat in der Beschreibung zugeordnet.
+      <button class="btn small" data-action="miete-zuordnung" style="margin-left:8px;">Zuordnung speichern</button></div>` : ''}
+    <div class="grid cols-3" style="margin-bottom:18px;">
+      <div class="kpi"><div class="label">Soll pro Monat</div><div class="value">${eur(sollSum)}</div><div class="sub">${persons.filter(m=>state.memberSoll[m]>0).length} Personen mit Mietanteil</div></div>
+      <div class="kpi"><div class="label">Eingegangen ${y}</div><div class="value">${eur(round2(inYear.reduce((s,p)=>s+p.r.betrag,0)))}</div></div>
+      <div class="kpi"><div class="label">Offen bis heute</div><div class="value ${totalOffen>0?'neg':''}">${eur(round2(totalOffen))}</div><div class="sub">fällige Monate minus Eingänge</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Mietanteile ${y}</h2><button class="btn ghost small" data-action="soll-save">Sollbeträge speichern</button></div>
+      ${persons.length ? `<div class="tablewrap"><table class="mieten"><thead><tr><th>Person</th><th>Soll/Monat</th>${head}<th class="num">Summe</th><th class="num">Offen</th></tr></thead>
+      <tbody>${rows}
+        <tr class="total"><td>Eingang gesamt</td><td></td>${colSum}<td></td><td></td></tr>
+        <tr class="sub"><td>Miete & NK bezahlt</td><td></td>${mieteAus}<td></td><td></td></tr>
+      </tbody></table></div>`
+      : `<div class="empty">Noch keine Sollbeträge. Trag unten bei den Mitgliedern den monatlichen Mietanteil ein.</div>`}
+      <div class="hint">Feld anklicken, um einen Eingang für diese Person und diesen Monat zu buchen. „Offen" zählt ab der ersten Zahlung einer Person bis zum laufenden Monat. Mietanteile per Überweisung brauchen keinen hochgeladenen Beleg, das macht der Kontoauszug.</div>
+    </div>
+    ${state.members.filter(m=>!(state.memberSoll[m]>0) && !persons.includes(m)).length ? `<div class="card"><h2>Mitglieder ohne Mietanteil</h2>
+      <div class="row-form" style="margin-top:0;">${state.members.filter(m=>!(state.memberSoll[m]>0) && !persons.includes(m)).map(m=>`<div class="field"><label>${esc(m)}</label><input type="text" inputmode="decimal" class="amount" data-soll="${escAttr(m)}" placeholder="0,00" style="width:110px;"></div>`).join('')}
+      <button class="btn ghost" data-action="soll-save">Speichern</button></div></div>` : ''}
+    ${ohne.length ? `<div class="card"><h2>Ohne Person</h2><div class="hint" style="margin-top:0;">Bei diesen Mietzahlungen findet die App keinen Namen. Über „Bearbeiten" die Person auswählen.</div>${journalTable(sortRows(ohne.map(p=>p.r), false))}</div>` : ''}`;
+}
+async function saveSoll(){
+  const vals = {};
+  document.querySelectorAll('[data-soll]').forEach(i=>{ vals[i.dataset.soll] = round2(parseAmount(i.value)); });
+  const rows = state.members.map(m=>[m, (m in vals ? vals[m] : state.memberSoll[m]) || '']);
+  await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', rows); await refresh(); });
+  renderContent(); showToast('Sollbeträge gespeichert');
+}
+function mieteDialog(person, z){
+  const soll = state.memberSoll[person] || 0;
+  const schon = round2(mietZahlungen().filter(p=>p.person===person && p.z===z).reduce((s,p)=>s+p.r.betrag,0));
+  const rest = round2(Math.max(0, soll - schon));
+  modal(`<h2>${esc(person)} · ${monatLabel(z)}</h2>
+    <p>${schon?`Schon eingegangen: ${eur(schon)}. `:''}${soll?`Soll: ${eur(soll)}.`:''}</p>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr; margin-top:0;">
+      <div class="field"><label>Betrag €</label><input type="text" inputmode="decimal" class="amount" id="mz-betrag" value="${amountInput(rest||soll||'')}"></div>
+      <div class="field"><label>Eingang am</label><input type="date" id="mz-datum" value="${today()}"></div>
+      <div class="field"><label>Auf Konto</label><select id="mz-konto">${ACCOUNTS.map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
+      <div class="field"><label>Kategorie</label><select id="mz-kat"><option>${MIET_KAT}</option><option>Einlage Gesellschafter</option></select></div>
+    </div>`, async ()=>{
+    const betrag = round2(parseAmount(val('mz-betrag')));
+    if(!(betrag>0)){ showToast('Betrag fehlt'); return false; }
+    const kat = val('mz-kat');
+    const row = { typ:'Einnahme', datum: val('mz-datum') || today(), betrag, konto: val('mz-konto'), kategorie: kat, bezahltVon: person, zeitraum: z, beschreibung: autoBeschreibung(kat, person, z) };
+    let neu;
+    await withBusy('Speichert…', async ()=>{ neu = await createBooking(row, null, ''); await refresh(); });
+    showToast(`Gebucht als #${neu.belegnr}`); renderContent();
+  }, 'Buchen');
+}
+async function saveZuordnung(){
+  const upd = mietZahlungen().filter(p=>p.geraten && p.person).map(p=>Object.assign({}, p.r, { bezahltVon: p.person, zeitraum: p.z, geaendertAm: nowStamp(), geaendertVon: me() }));
+  if(!upd.length) return;
+  await withBusy('Speichert…', async ()=>{ await updateRows('Journal', upd); await protokoll('Mieten zugeordnet', '', null, { anzahl: upd.length }); await refresh(); });
+  renderContent(); showToast(`${upd.length} Zahlungen zugeordnet`);
+}
+
 // ============ Aktionen ============
 async function stornoDialog(id){
   const r = byId(id); if(!r) return;
@@ -1452,6 +1608,9 @@ document.addEventListener('click', async (ev)=>{
     else if(a==='pick-konto'){ ui.konto = el.dataset.konto; renderContent(); }
     else if(a==='erstatten') await erstatten(el.dataset.member, el);
     else if(a==='csv') exportJournalCsv();
+    else if(a==='miete-buchen') mieteDialog(el.dataset.person, el.dataset.z);
+    else if(a==='miete-zuordnung') await saveZuordnung();
+    else if(a==='soll-save') await saveSoll();
     else if(a==='csv-euer') exportEuerCsv();
     else if(a==='print') window.print();
     else if(a==='project-add'){
@@ -1552,17 +1711,17 @@ function renderSetupForm(){
     };
     document.getElementById('add-member').onclick = async ()=>{
       const v = val('new-member-name').trim(); if(!v) return;
-      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', [...state.members, v].map(n=>[n])); await refresh(); });
+      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', memberRowsFor([...state.members, v])); await refresh(); });
       renderSetupForm();
     };
     document.querySelectorAll('[data-del-member]').forEach(el=>el.onclick=async()=>{
       const names = state.members.filter((_,i)=>i!==+el.dataset.delMember);
-      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
+      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', memberRowsFor(names)); await refresh(); });
       renderSetupForm();
     });
     document.getElementById('save-members').onclick = async ()=>{
-      const names = state.members.map((_,i)=>document.querySelector(`[data-member-idx="${i}"]`).value.trim()).filter(Boolean);
-      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', names.map(n=>[n])); await refresh(); });
+      const rows = state.members.map((old,i)=>[document.querySelector(`[data-member-idx="${i}"]`).value.trim(), state.memberSoll[old]||'']).filter(r=>r[0]);
+      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Mitglieder', rows); await refresh(); });
       renderSetupForm(); showToast('Gespeichert');
     };
   }
