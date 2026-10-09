@@ -148,6 +148,9 @@ table.mieten td.mname{white-space:nowrap; font-weight:600;}
 .mcell.m-part{color:var(--orange); font-weight:600;}
 .mcell.m-open{color:var(--hellrot); font-size:11px; text-transform:uppercase; letter-spacing:.04em;}
 .mcell.m-fut{color:var(--text-tertiary);}
+.mcell sup{color:var(--text-secondary); font-size:10px; margin-left:1px;}
+.mcell.m-verm{font-style:italic;}
+.modal{max-width:540px;}
 th.m-now{color:var(--rot);}
 .filebox{position:relative; display:flex; align-items:center; gap:12px; height:var(--field-h); padding:0 12px 0 5px; border:1px dashed var(--divide-strong); background:var(--surface2); cursor:pointer; min-width:0; transition:border-color .15s, background .15s;}
 .filebox:hover, .filebox.drag{border-color:var(--rot); background:rgba(255,255,255,.1);}
@@ -271,7 +274,8 @@ let CONFIG = (()=>{ try { return JSON.parse(localStorage.getItem('karat_config')
 const SHEET_DEFS = {
   Journal:    ['id','belegnr','datum','typ','betrag','konto','zielKonto','kategorie','projektId','beschreibung','bezahltVon','erstattetDurch','bezugId','belegUrl','storniert','stornoGrund','pruefen','hinweis','erfasstAm','erfasstVon','geaendertAm','geaendertVon','zeitraum'],
   Projekte:   ['id','name','kuerzel','traeger','budget','einnahmenBar','einnahmenShop'],
-  Konten:     ['konto','anfang','tatsaechlich','anfangDatum','tatsaechlichDatum'],
+  Konten:     ['konto','anfang','tatsaechlich','anfangDatum','tatsaechlichDatum','bezeichnung','archiviert'],
+  Mietvermerke: ['id','person','zeitraum','betrag','art','notiz','storniert','erfasstAm','erfasstVon'],
   Mitglieder: ['name','mietanteil'],
   Stammdaten: ['schluessel','wert'],
   Protokoll:  ['zeit','nutzer','aktion','id','vorher','nachher'],
@@ -279,9 +283,11 @@ const SHEET_DEFS = {
 // Alte Tabs (bis Okt. 2026). Werden nur noch gelesen – für die einmalige Übernahme ins Journal.
 const LEGACY_SHEETS = ['Buchungen','Vereinskonto'];
 
-const ACCOUNTS = ["Vereinskonto","PayPal","Barkasse"];
+const DEFAULT_ACCOUNTS = ["Vereinskonto","PayPal","Barkasse"];
+let ACCOUNTS = DEFAULT_ACCOUNTS.slice();
 const ACCOUNT_LABELS = { Vereinskonto:"Bankkonto", PayPal:"PayPal", Barkasse:"Barkasse", Privat:"privat" };
-function accLabel(a){ return ACCOUNT_LABELS[a] || a || '—'; }
+function accLabel(a){ const k = (typeof state!=='undefined' && state.konten) ? state.konten.find(x=>x.konto===a) : null; return (k && k.bezeichnung) || ACCOUNT_LABELS[a] || a || '—'; }
+function activeAccounts(){ return ACCOUNTS.filter(a=>!kontoRow(a).archiviert); }
 const DEFAULT_MEMBERS = ["Mitglied 1","Mitglied 2","Mitglied 3","Mitglied 4","Mitglied 5","Mitglied 6","Mitglied 7","Mitglied 8","Mitglied 9","Mitglied 10"];
 const DEFAULT_STAMM = [
   ['name','STUDIO KARAT GbR'],
@@ -372,7 +378,7 @@ async function ensureSheets(){
   }
   for(const name of toInit){
     const rows = [SHEET_DEFS[name]];
-    if(name==='Konten') ACCOUNTS.forEach(a=>rows.push([a,0,0,'','']));
+    if(name==='Konten') DEFAULT_ACCOUNTS.forEach(a=>rows.push([a,0,0,'','','','']));
     if(name==='Mitglieder') DEFAULT_MEMBERS.forEach(m=>rows.push([m]));
     if(name==='Stammdaten') DEFAULT_STAMM.forEach(r=>rows.push(r));
     await apiFetch(`${API_BASE}/${CONFIG.spreadsheetId}/values/${rng(name+'!A1')}?valueInputOption=RAW`, 'PUT', { values: rows });
@@ -632,14 +638,16 @@ function normJournal(r){
 
 async function refresh(){
   const legacyPresent = LEGACY_SHEETS.filter(n=>sheetIdCache[n] !== undefined);
-  const [journal, projekte, konten, mitglieder, stamm, ...legacy] = await Promise.all([
-    readSheet('Journal'), readSheet('Projekte'), readSheet('Konten'), readSheet('Mitglieder'), readSheet('Stammdaten'),
+  const [journal, projekte, konten, mitglieder, stamm, vermerke, ...legacy] = await Promise.all([
+    readSheet('Journal'), readSheet('Projekte'), readSheet('Konten'), readSheet('Mitglieder'), readSheet('Stammdaten'), readSheet('Mietvermerke'),
     ...legacyPresent.map(n=>readSheet(n)),
   ]);
   state.journal = journal.map(normJournal);
   state.projects = {}; state.projectOrder = [];
   projekte.forEach(p=>{ p.id = String(p.id); p.budget = num(p.budget); state.projects[p.id] = p; state.projectOrder.push(p.id); });
-  state.konten = konten.map(k=>Object.assign(k, { anfang: num(k.anfang), tatsaechlich: num(k.tatsaechlich), anfangDatum: toISO(k.anfangDatum), tatsaechlichDatum: toISO(k.tatsaechlichDatum) }));
+  state.konten = konten.filter(k=>k.konto).map(k=>Object.assign(k, { konto: String(k.konto), anfang: num(k.anfang), tatsaechlich: num(k.tatsaechlich), anfangDatum: toISO(k.anfangDatum), tatsaechlichDatum: toISO(k.tatsaechlichDatum), bezeichnung: String(k.bezeichnung||''), archiviert: truthy(k.archiviert) }));
+  ACCOUNTS = [...new Set([...DEFAULT_ACCOUNTS, ...state.konten.map(k=>k.konto).filter(k=>k!=='Privat')])];
+  state.vermerke = (vermerke||[]).map(v=>Object.assign(v, { id:String(v.id), person:String(v.person||''), zeitraum: String(v.zeitraum||'').slice(0,7), betrag: round2(num(v.betrag)), storniert: truthy(v.storniert) })).filter(v=>!v.storniert);
   state.members = mitglieder.map(m=>String(m.name)).filter(Boolean);
   state.memberSoll = {}; mitglieder.forEach(m=>{ if(m.name) state.memberSoll[String(m.name)] = round2(num(m.mietanteil)); });
   state.stamm = {}; stamm.forEach(s=>{ state.stamm[String(s.schluessel)] = String(s.wert ?? ''); });
@@ -647,7 +655,7 @@ async function refresh(){
   legacyPresent.forEach((n,i)=>{ if(n==='Buchungen') state.legacy.buchungen = legacy[i]; else state.legacy.vk = legacy[i]; });
   if(state.projectOrder.length && !state.projects[ui.projectId]) ui.projectId = state.projectOrder[0];
 }
-function kontoRow(a){ return state.konten.find(k=>k.konto===a) || { konto:a, anfang:0, tatsaechlich:0, anfangDatum:'', tatsaechlichDatum:'' }; }
+function kontoRow(a){ return (state.konten||[]).find(k=>k.konto===a) || { konto:a, anfang:0, tatsaechlich:0, anfangDatum:'', tatsaechlichDatum:'', bezeichnung:'', archiviert:false }; }
 function byId(id){ return state.journal.find(r=>r.id===id); }
 function projName(id){ return id && state.projects[id] ? state.projects[id].name : ''; }
 
@@ -855,7 +863,7 @@ function bookingForm(opts){
   const e = editing || {};
   const pid = editing ? e.projektId : (opts.projektId || '');
   const projOpts = `<option value="">– allgemein –</option>` + state.projectOrder.map(id=>`<option value="${escAttr(id)}" ${pid===id?'selected':''}>${esc(state.projects[id].name)}</option>`).join('');
-  const accOpts = (sel)=>ACCOUNTS.map(a=>`<option value="${a}" ${sel===a?'selected':''}>${accLabel(a)}</option>`).join('');
+  const accOpts = (sel)=>[...new Set([...activeAccounts(), ...(sel && sel!=='Privat' && ACCOUNTS.includes(sel) ? [sel] : [])])].map(a=>`<option value="${a}" ${sel===a?'selected':''}>${accLabel(a)}</option>`).join('');
   const members = allMembersWithAuslagen();
   return `<div class="card" id="bf">
     <div class="card-head"><h2>${editing?`Buchung #${esc(e.belegnr)} bearbeiten`:(opts.title||'Neue Buchung')}</h2>
@@ -1114,7 +1122,7 @@ function renderKonten(){
   const hasAbgl = kr.tatsaechlichDatum || kr.tatsaechlich;
   return `
     <div class="card">
-      <div class="proj-list" style="margin-bottom:0;">${ACCOUNTS.map(a=>`<div class="proj-chip ${a===k?'active':''}" data-action="pick-konto" data-konto="${a}">${accLabel(a)} · ${eur(balanceAt(a,null))}</div>`).join('')}</div>
+      <div class="proj-list" style="margin-bottom:0;">${ACCOUNTS.filter(a=>!kontoRow(a).archiviert || a===k).map(a=>`<div class="proj-chip ${a===k?'active':''}" data-action="pick-konto" data-konto="${a}">${accLabel(a)} · ${eur(balanceAt(a,null))}</div>`).join('')}</div>
     </div>
     <div class="grid cols-4" style="margin-bottom:18px;">
       <div class="kpi"><div class="label">${from?'Stand 01.01.'+y:'Anfangsbestand'}</div><div class="value">${eur(J.start)}</div></div>
@@ -1131,7 +1139,11 @@ function renderKonten(){
         : `<div class="empty">Keine Bewegungen auf diesem Konto im gewählten Zeitraum.</div>`}
     </div>
     <div class="card">
-      <h2>Abgleich mit echtem Kontoauszug</h2>
+      <h2>Konto &amp; Abgleich mit Kontoauszug</h2>
+      <div class="form-grid" style="margin-top:0; margin-bottom:6px;">
+        <div class="field span2"><label>Name des Kontos</label><input type="text" id="k-bez" value="${escAttr(accLabel(k))}"></div>
+        <label class="check" style="align-self:center;"><input type="checkbox" id="k-arch" ${kr.archiviert?'checked':''}> aufgelöst (nicht mehr zum Buchen anbieten)</label>
+      </div>
       <div class="form-grid">
         <div class="field"><label>Anfangsbestand €</label><input type="text" inputmode="decimal" class="amount" id="k-anfang" value="${amountInput(kr.anfang)}"></div>
         <div class="field"><label>gilt ab (Startdatum)</label><input type="date" id="k-anfangDatum" value="${escAttr(kr.anfangDatum)}"></div>
@@ -1143,6 +1155,16 @@ function renderKonten(){
         Laut App am ${kr.tatsaechlichDatum?deDate(kr.tatsaechlichDatum):'heute'}: <b>${eur(abglBal)}</b> · Kontoauszug: <b>${eur(kr.tatsaechlich)}</b> ·
         ${Math.abs(diff)<0.005 ? 'Stimmt überein.' : `Differenz <b>${eur(diff)}</b>. ${diff>0?'Auf dem Konto ist mehr Geld, als gebucht ist: Einnahme oder Umbuchung fehlt.':'Auf dem Konto ist weniger Geld, als gebucht ist: Ausgabe, Erstattung oder Gebühr fehlt.'}`}
       </div>` : `<div class="hint">Anfangsbestand = Kontostand am Startdatum, bevor die erste Buchung in der App erfasst ist. Den Stand vom letzten Kontoauszug eintragen, dann rechnet die App die Differenz aus.</div>`}
+    </div>
+    <div class="card">
+      <h2>Weiteres Konto</h2>
+      <div class="hint" style="margin-top:0;">Z. B. ein altes Konto, über das noch Miete lief, oder ein Sparkonto. Danach steht es überall zur Auswahl, auch bei Umbuchungen.</div>
+      <div class="form-grid">
+        <div class="field span2"><label>Name</label><input type="text" id="nk-name" placeholder="z.B. Altes Konto"></div>
+        <div class="field"><label>Anfangsbestand €</label><input type="text" inputmode="decimal" class="amount" id="nk-anfang" placeholder="0,00"></div>
+        <div class="field"><label>gilt ab</label><input type="date" id="nk-datum"></div>
+        <button class="btn" data-action="konto-neu">+ Konto anlegen</button>
+      </div>
     </div>`;
 }
 
@@ -1160,7 +1182,7 @@ function renderAuslagen(){
       <div class="tablewrap"><table><tbody>${list}</tbody></table></div>
       <div class="row-form">
         <div class="field"><label>Erstattet am</label><input type="date" data-erst-datum value="${today()}"></div>
-        <div class="field"><label>über</label><select data-erst-konto>${ACCOUNTS.map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
+        <div class="field"><label>über</label><select data-erst-konto>${activeAccounts().map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
         <button class="btn" data-action="erstatten" data-member="${escAttr(m)}">Ausgewählte erstatten</button>
       </div>
     </div>`;
@@ -1434,28 +1456,30 @@ function renderMieten(){
   const heute = today().slice(0,7);
   const pays = mietZahlungen();
   const inYear = pays.filter(p=>p.z.slice(0,4)===y);
-  const persons = [...new Set([...state.members.filter(m=>state.memberSoll[m]>0), ...inYear.filter(p=>p.person).map(p=>p.person)])];
+  const persons = [...new Set([...state.members.filter(m=>state.memberSoll[m]>0), ...inYear.filter(p=>p.person).map(p=>p.person), ...state.vermerke.filter(v=>v.zeitraum.slice(0,4)===y).map(v=>v.person)])];
   const sumFor = (person, z)=> round2(inYear.filter(p=>p.person===person && p.z===z).reduce((s,p)=>s+p.r.betrag,0));
+  const vermFor = (person, z)=> round2(state.vermerke.filter(v=>v.person===person && v.zeitraum===z).reduce((s,v)=>s+v.betrag,0));
   let totalOffen = 0;
   const rows = persons.map(m=>{
     const soll = state.memberSoll[m] || 0;
-    const ersteZ = pays.filter(p=>p.person===m).map(p=>p.z).sort()[0] || heute;
-    let gezahlt = 0, faellig = 0;
+    const ersteZ = [...pays.filter(p=>p.person===m).map(p=>p.z), ...state.vermerke.filter(v=>v.person===m).map(v=>v.zeitraum)].sort()[0] || heute;
+    let gezahlt = 0, faellig = 0, verrechnet = 0;
     const cells = zs.map(z=>{
-      const v = sumFor(m, z); gezahlt += v;
+      const bar = sumFor(m, z), vm = vermFor(m, z), v = round2(bar + vm); gezahlt += bar; verrechnet += vm;
       const due = z <= heute && z >= ersteZ; if(due) faellig += soll;
       let cls = 'm-fut';
       if(v>0 && (soll===0 || v >= soll-0.005)) cls = 'm-ok';
       else if(v>0) cls = 'm-part';
       else if(due && soll>0) cls = 'm-open';
-      const label = v>0 ? amountInput(v).replace(/,00$/,'') : (cls==='m-open' ? 'offen' : '·');
-      return `<td class="mcell ${cls}" data-action="miete-buchen" data-person="${escAttr(m)}" data-z="${z}" title="${escAttr(m)} · ${monatLabel(z)}${v?': '+eur(v):''}">${label}</td>`;
+      const label = v>0 ? amountInput(v).replace(/,00$/,'') + (vm ? '<sup>*</sup>' : '') : (cls==='m-open' ? 'offen' : '·');
+      const notes = state.vermerke.filter(x=>x.person===m && x.zeitraum===z).map(x=>`${x.art} ${eur(x.betrag)}: ${x.notiz}`).join(' | ');
+      return `<td class="mcell ${cls} ${vm?'m-verm':''}" data-action="miete-buchen" data-person="${escAttr(m)}" data-z="${z}" title="${escAttr(m)} · ${monatLabel(z)}${bar?' · Eingang '+eur(bar):''}${notes?' · '+escAttr(notes):''}">${label}</td>`;
     }).join('');
-    const offen = round2(Math.max(0, faellig - gezahlt)); totalOffen += offen;
+    const offen = round2(Math.max(0, faellig - gezahlt - verrechnet)); totalOffen += offen;
     const isMember = state.members.includes(m);
     return `<tr><td class="mname">${esc(m)}</td>
       <td>${isMember?`<input type="text" inputmode="decimal" class="amount" data-soll="${escAttr(m)}" value="${soll?amountInput(soll):''}" placeholder="0,00" style="width:84px; height:32px;">`:'<span class="hint">kein Mitglied</span>'}</td>
-      ${cells}<td class="num"><b>${eur(gezahlt)}</b></td><td class="num ${offen>0?'neg':''}">${offen?eur(offen):'—'}</td></tr>`;
+      ${cells}<td class="num"><b>${eur(round2(gezahlt+verrechnet))}</b></td><td class="num ${offen>0?'neg':''}">${offen?eur(offen):'—'}</td></tr>`;
   }).join('');
   const colSum = zs.map(z=>`<td class="num">${(v=>v?amountInput(v).replace(/,00$/,''):'')(round2(inYear.filter(p=>p.z===z).reduce((s,p)=>s+p.r.betrag,0)))}</td>`).join('');
   const mieteAus = zs.map(z=>`<td class="num">${(v=>v?amountInput(v).replace(/,00$/,''):'')(round2(active().filter(r=>r.typ==='Ausgabe' && r.kategorie==='Miete & Nebenkosten' && (r.datum||'').slice(0,7)===z).reduce((s,r)=>s+r.betrag,0)))}</td>`).join('');
@@ -1469,17 +1493,18 @@ function renderMieten(){
     <div class="grid cols-3" style="margin-bottom:18px;">
       <div class="kpi"><div class="label">Soll pro Monat</div><div class="value">${eur(sollSum)}</div><div class="sub">${persons.filter(m=>state.memberSoll[m]>0).length} Personen mit Mietanteil</div></div>
       <div class="kpi"><div class="label">Eingegangen ${y}</div><div class="value">${eur(round2(inYear.reduce((s,p)=>s+p.r.betrag,0)))}</div></div>
-      <div class="kpi"><div class="label">Offen bis heute</div><div class="value ${totalOffen>0?'neg':''}">${eur(round2(totalOffen))}</div><div class="sub">fällige Monate minus Eingänge</div></div>
+      <div class="kpi"><div class="label">Offen bis heute</div><div class="value ${totalOffen>0?'neg':''}">${eur(round2(totalOffen))}</div><div class="sub">fällig minus Eingänge und Vermerke</div></div>
     </div>
     <div class="card">
       <div class="card-head"><h2>Mietanteile ${y}</h2><button class="btn ghost small" data-action="soll-save">Sollbeträge speichern</button></div>
       ${persons.length ? `<div class="tablewrap"><table class="mieten"><thead><tr><th>Person</th><th>Soll/Monat</th>${head}<th class="num">Summe</th><th class="num">Offen</th></tr></thead>
       <tbody>${rows}
         <tr class="total"><td>Eingang gesamt</td><td></td>${colSum}<td></td><td></td></tr>
+        ${state.vermerke.some(v=>v.zeitraum.slice(0,4)===y) ? `<tr class="sub"><td>ohne Zahlung erledigt<sup>*</sup></td><td></td>${zs.map(z=>`<td class="num">${(v=>v?amountInput(v).replace(/,00$/,''):'')(round2(state.vermerke.filter(v=>v.zeitraum===z).reduce((s,v)=>s+v.betrag,0)))}</td>`).join('')}<td></td><td></td></tr>` : ''}
         <tr class="sub"><td>Miete & NK bezahlt</td><td></td>${mieteAus}<td></td><td></td></tr>
       </tbody></table></div>`
       : `<div class="empty">Noch keine Sollbeträge. Trag unten bei den Mitgliedern den monatlichen Mietanteil ein.</div>`}
-      <div class="hint">Feld anklicken, um einen Eingang für diese Person und diesen Monat zu buchen. „Offen" zählt ab der ersten Zahlung einer Person bis zum laufenden Monat. Mietanteile per Überweisung brauchen keinen hochgeladenen Beleg, das macht der Kontoauszug.</div>
+      <div class="hint">Feld anklicken, um einen Eingang zu buchen oder den Monat ohne Zahlung als erledigt zu markieren (<sup>*</sup>, z.B. verrechnet). „Offen" zählt ab der ersten Zahlung einer Person bis zum laufenden Monat. Mietanteile per Überweisung brauchen keinen hochgeladenen Beleg, das macht der Kontoauszug.</div>
     </div>
     ${state.members.filter(m=>!(state.memberSoll[m]>0) && !persons.includes(m)).length ? `<div class="card"><h2>Mitglieder ohne Mietanteil</h2>
       <div class="row-form" style="margin-top:0;">${state.members.filter(m=>!(state.memberSoll[m]>0) && !persons.includes(m)).map(m=>`<div class="field"><label>${esc(m)}</label><input type="text" inputmode="decimal" class="amount" data-soll="${escAttr(m)}" placeholder="0,00" style="width:110px;"></div>`).join('')}
@@ -1495,24 +1520,53 @@ async function saveSoll(){
 }
 function mieteDialog(person, z){
   const soll = state.memberSoll[person] || 0;
-  const schon = round2(mietZahlungen().filter(p=>p.person===person && p.z===z).reduce((s,p)=>s+p.r.betrag,0));
+  const zahl = mietZahlungen().filter(p=>p.person===person && p.z===z);
+  const verm = state.vermerke.filter(v=>v.person===person && v.zeitraum===z);
+  const schon = round2(zahl.reduce((s,p)=>s+p.r.betrag,0) + verm.reduce((s,v)=>s+v.betrag,0));
   const rest = round2(Math.max(0, soll - schon));
+  const liste = [
+    ...zahl.map(p=>`<tr><td class="nr">#${esc(p.r.belegnr)}</td><td>${deDate(p.r.datum)}</td><td>${accLabel(p.r.konto)}</td><td class="num">${eur(p.r.betrag)}</td><td></td></tr>`),
+    ...verm.map(v=>`<tr><td class="nr">*</td><td colspan="2">${esc(v.art)}: ${esc(v.notiz)}</td><td class="num">${eur(v.betrag)}</td><td class="actions"><button class="btn danger small" data-action="vermerk-del" data-id="${escAttr(v.id)}">entfernen</button></td></tr>`),
+  ].join('');
   modal(`<h2>${esc(person)} · ${monatLabel(z)}</h2>
-    <p>${schon?`Schon eingegangen: ${eur(schon)}. `:''}${soll?`Soll: ${eur(soll)}.`:''}</p>
+    <p>${soll?`Soll ${eur(soll)}`:'Kein Sollbetrag'}${schon?` · erledigt ${eur(schon)}`:''}${rest&&schon?` · fehlt ${eur(rest)}`:''}</p>
+    ${liste?`<div class="tablewrap" style="margin-bottom:14px;"><table><tbody>${liste}</tbody></table></div>`:''}
+    <div class="seg" id="mz-mode" style="margin-bottom:12px;"><button type="button" data-mode="zahlung" class="active">Zahlung buchen</button><button type="button" data-mode="vermerk">Ohne Zahlung erledigt</button></div>
     <div class="form-grid" style="grid-template-columns:1fr 1fr; margin-top:0;">
       <div class="field"><label>Betrag €</label><input type="text" inputmode="decimal" class="amount" id="mz-betrag" value="${amountInput(rest||soll||'')}"></div>
-      <div class="field"><label>Eingang am</label><input type="date" id="mz-datum" value="${today()}"></div>
-      <div class="field"><label>Auf Konto</label><select id="mz-konto">${ACCOUNTS.map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
-      <div class="field"><label>Kategorie</label><select id="mz-kat"><option>${MIET_KAT}</option><option>Einlage Gesellschafter</option></select></div>
-    </div>`, async ()=>{
+      <div class="field" data-mz="zahlung"><label>Eingang am</label><input type="date" id="mz-datum" value="${today()}"></div>
+      <div class="field" data-mz="zahlung"><label>Auf Konto</label><select id="mz-konto">${activeAccounts().map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
+      <div class="field" data-mz="zahlung"><label>Kategorie</label><select id="mz-kat"><option>${MIET_KAT}</option><option>Einlage Gesellschafter</option></select></div>
+      <div class="field" data-mz="vermerk" style="display:none;"><label>Wie erledigt</label><select id="mz-art"><option>verrechnet</option><option>anders bezahlt</option><option>erlassen</option></select></div>
+      <div class="field" data-mz="vermerk" style="display:none; grid-column:span 2;"><label>Notiz *</label><input type="text" id="mz-notiz" placeholder="z.B. mit offenen Auslagen FRANCIS KARAT verrechnet"></div>
+    </div>
+    <div class="hint" data-mz="vermerk" style="display:none;">Erscheint nur hier bei den Mieten, nicht als Kontobewegung und nicht in der EÜR.</div>`, async ()=>{
     const betrag = round2(parseAmount(val('mz-betrag')));
     if(!(betrag>0)){ showToast('Betrag fehlt'); return false; }
+    const mode = document.querySelector('#mz-mode .active').dataset.mode;
+    if(mode==='vermerk'){
+      const notiz = val('mz-notiz').trim();
+      if(!notiz){ showToast('Bitte kurz notieren, wie es erledigt wurde'); return false; }
+      const v = { id: uid(), person, zeitraum: z, betrag, art: val('mz-art'), notiz, storniert:false, erfasstAm: nowStamp(), erfasstVon: me() };
+      await withBusy('Speichert…', async ()=>{ await appendRows('Mietvermerke', [v]); await protokoll('Mietvermerk', v.id, null, v); await refresh(); });
+      showToast('Als erledigt markiert'); renderContent(); return;
+    }
     const kat = val('mz-kat');
     const row = { typ:'Einnahme', datum: val('mz-datum') || today(), betrag, konto: val('mz-konto'), kategorie: kat, bezahltVon: person, zeitraum: z, beschreibung: autoBeschreibung(kat, person, z) };
     let neu;
     await withBusy('Speichert…', async ()=>{ neu = await createBooking(row, null, ''); await refresh(); });
     showToast(`Gebucht als #${neu.belegnr}`); renderContent();
-  }, 'Buchen');
+  }, 'Speichern');
+  document.querySelectorAll('#mz-mode button').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('#mz-mode button').forEach(x=>x.classList.toggle('active', x===b));
+    document.querySelectorAll('[data-mz]').forEach(el=>{ el.style.display = el.dataset.mz===b.dataset.mode ? '' : 'none'; });
+  });
+}
+async function deleteVermerk(id){
+  const v = state.vermerke.find(x=>x.id===id); if(!v) return;
+  document.getElementById('modal-root').innerHTML = '';
+  await withBusy('Speichert…', async ()=>{ await updateRows('Mietvermerke', [Object.assign(clean(v), { storniert:true })]); await protokoll('Mietvermerk entfernt', id, v, null); await refresh(); });
+  renderContent(); showToast('Vermerk entfernt');
 }
 async function saveZuordnung(){
   const upd = mietZahlungen().filter(p=>p.geraten && p.person).map(p=>Object.assign({}, p.r, { bezahltVon: p.person, zeitraum: p.z, geaendertAm: nowStamp(), geaendertVon: me() }));
@@ -1610,6 +1664,7 @@ document.addEventListener('click', async (ev)=>{
     else if(a==='csv') exportJournalCsv();
     else if(a==='miete-buchen') mieteDialog(el.dataset.person, el.dataset.z);
     else if(a==='miete-zuordnung') await saveZuordnung();
+    else if(a==='vermerk-del') await deleteVermerk(el.dataset.id);
     else if(a==='soll-save') await saveSoll();
     else if(a==='csv-euer') exportEuerCsv();
     else if(a==='print') window.print();
@@ -1635,9 +1690,18 @@ document.addEventListener('click', async (ev)=>{
         ui.projectId = null; renderContent();
       }, 'Löschen', true);
     }
+    else if(a==='konto-neu'){
+      const name = val('nk-name').trim();
+      if(!name){ showToast('Bitte einen Namen angeben'); return; }
+      if(name==='Privat' || ACCOUNTS.some(x=>x.toLowerCase()===name.toLowerCase() || accLabel(x).toLowerCase()===name.toLowerCase())){ showToast('Ein Konto mit diesem Namen gibt es schon'); return; }
+      const row = { konto:name, anfang: round2(parseAmount(val('nk-anfang'))), anfangDatum: val('nk-datum'), tatsaechlich:0, tatsaechlichDatum:'', bezeichnung:'', archiviert:false };
+      await withBusy('Speichert…', async ()=>{ await appendRows('Konten', [row]); await protokoll('Konto angelegt', name, null, row); await refresh(); });
+      ui.konto = name; renderContent(); showToast('Konto angelegt');
+    }
     else if(a==='konto-save'){
       const k = ui.konto, old = kontoRow(k);
-      const row = { konto:k, anfang: round2(parseAmount(val('k-anfang'))), anfangDatum: val('k-anfangDatum'), tatsaechlich: round2(parseAmount(val('k-tat'))), tatsaechlichDatum: val('k-tatDatum') };
+      const bez = val('k-bez').trim();
+      const row = Object.assign(clean(old), { konto:k, anfang: round2(parseAmount(val('k-anfang'))), anfangDatum: val('k-anfangDatum'), tatsaechlich: round2(parseAmount(val('k-tat'))), tatsaechlichDatum: val('k-tatDatum'), bezeichnung: (bez && bez!==(ACCOUNT_LABELS[k]||k)) ? bez : '', archiviert: !!(document.getElementById('k-arch')||{}).checked });
       await withBusy('Speichert…', async ()=>{
         if(state.konten.some(x=>x.konto===k)) await updateRows('Konten', [row], 'konto'); else await appendRows('Konten', [row]);
         await protokoll('Konto geändert', k, old, row);
