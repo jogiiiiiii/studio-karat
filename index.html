@@ -141,6 +141,7 @@ input.amount{font-variant-numeric:tabular-nums; text-align:right;}
 input[type=file]{height:auto; padding:8px; font-size:13px;}
 .field .filebox{text-transform:none; letter-spacing:0; font-weight:400; color:#fff; font-size:13.5px;}
 table.mieten th, table.mieten td{padding:8px 6px;}
+table.mieten th.mhead, table.mieten td.mcell, table.mieten td.mcell-sum{width:60px; min-width:60px; text-align:center; white-space:nowrap; font-variant-numeric:tabular-nums;}
 table.mieten td.mname{white-space:nowrap; font-weight:600;}
 .mcell{text-align:center; cursor:pointer; font-variant-numeric:tabular-nums; font-size:13px; min-width:44px; transition:background .12s;}
 .mcell:hover{background:var(--blue-bg) !important;}
@@ -850,7 +851,7 @@ function renderUebersicht(){
       ${(projRows||ohne) ? `<div class="tablewrap"><table><thead><tr><th>Projekt</th><th class="num">Einnahmen</th><th class="num">Ausgaben</th><th class="num">Ergebnis</th></tr></thead>
       <tbody>${projRows}${ohne}<tr class="total"><td>Gesamt</td><td class="num pos">${eur(E.sumE)}</td><td class="num neg">${eur(E.sumA)}</td><td class="num ${E.ergebnis>=0?'pos':'neg'}">${eur(E.ergebnis)}</td></tr></tbody></table></div>`
       : `<div class="empty">Noch keine Buchungen in diesem Jahr.</div>`}
-      <div class="hint">Umbuchungen zwischen Konten, Erstattungen von Auslagen und Einlagen/Entnahmen verschieben nur Geld und zählen hier nicht als Einnahme oder Ausgabe.</div>
+      
     </div>`;
 }
 
@@ -885,7 +886,7 @@ function bookingForm(opts){
         <label class="filebox" id="bf-filebox"><input type="file" id="bf-beleg" accept="application/pdf,image/*"><span class="filebox-btn">Datei wählen</span><span class="filebox-name" id="bf-beleg-name">${editing&&e.belegUrl?'Beleg vorhanden – neue Datei ersetzt ihn':'oder hier reinziehen'}</span></label></div>
     </div>
     ${editing && e.pruefen ? `<div class="note" style="margin-top:14px;">Zu prüfen: ${esc(e.hinweis||'')}. Mit „Speichern" gilt die Buchung als geprüft.</div>`:''}
-    <div class="hint" id="bf-hint"></div>
+    
     <div class="row-form" style="justify-content:flex-end;">
       ${editing?'<button class="btn ghost" data-action="bf-cancel">Abbrechen</button>':''}
       <button class="btn" data-action="bf-save">${editing?'Speichern':'+ Buchen'}</button>
@@ -1040,7 +1041,7 @@ function renderJournal(){
         <label class="check"><input type="checkbox" id="f-storno" ${f.storno?'checked':''}> Stornos zeigen</label>
       </div>
       ${journalTable(rows, { empty:'Keine Buchungen für diese Auswahl.' })}
-      <div class="hint">Buchungen werden nicht gelöscht, sondern storniert. So bleibt die Nummernfolge lückenlos und jede Änderung nachvollziehbar (Tab „Protokoll" im Sheet).</div>
+      
     </div>`;
 }
 
@@ -1154,11 +1155,11 @@ function renderKonten(){
       ${hasAbgl ? `<div class="note ${Math.abs(diff)<0.005?'blue':''}" style="margin-top:14px; margin-bottom:0;">
         Laut App am ${kr.tatsaechlichDatum?deDate(kr.tatsaechlichDatum):'heute'}: <b>${eur(abglBal)}</b> · Kontoauszug: <b>${eur(kr.tatsaechlich)}</b> ·
         ${Math.abs(diff)<0.005 ? 'Stimmt überein.' : `Differenz <b>${eur(diff)}</b>. ${diff>0?'Auf dem Konto ist mehr Geld, als gebucht ist: Einnahme oder Umbuchung fehlt.':'Auf dem Konto ist weniger Geld, als gebucht ist: Ausgabe, Erstattung oder Gebühr fehlt.'}`}
-      </div>` : `<div class="hint">Anfangsbestand = Kontostand am Startdatum, bevor die erste Buchung in der App erfasst ist. Den Stand vom letzten Kontoauszug eintragen, dann rechnet die App die Differenz aus.</div>`}
+      </div>` : ''}
     </div>
     <div class="card">
       <h2>Weiteres Konto</h2>
-      <div class="hint" style="margin-top:0;">Z. B. ein altes Konto, über das noch Miete lief, oder ein Sparkonto. Danach steht es überall zur Auswahl, auch bei Umbuchungen.</div>
+      
       <div class="form-grid">
         <div class="field span2"><label>Name</label><input type="text" id="nk-name" placeholder="z.B. Altes Konto"></div>
         <div class="field"><label>Anfangsbestand €</label><input type="text" inputmode="decimal" class="amount" id="nk-anfang" placeholder="0,00"></div>
@@ -1193,7 +1194,7 @@ function renderAuslagen(){
       <h2>Auslagen der Mitglieder</h2>
       ${rows ? `<div class="tablewrap"><table><thead><tr><th>Mitglied</th><th class="num">Ausgelegt</th><th class="num">Erstattet</th><th class="num">Offen</th></tr></thead>
       <tbody>${rows}<tr class="total"><td>Gesamt offen</td><td></td><td></td><td class="num ${totalOffen>0?'neg':''}">${eur(totalOffen)}</td></tr></tbody></table></div>` : '<div class="empty">Niemand hat bisher privat ausgelegt.</div>'}
-      <div class="hint">Eine Auslage zählt am Tag der privaten Zahlung als Ausgabe der GbR. Die Rückzahlung bucht nur Geld vom Konto an die Person und zählt nicht nochmal als Ausgabe.</div>
+      
     </div>
     ${open}
     <div class="card">
@@ -1234,8 +1235,8 @@ function renderAbschluss(){
           <button class="btn ghost" data-action="csv-euer">EÜR als CSV</button>
           <button class="btn" data-action="print">Drucken / PDF</button>
         </div></div>
-      ${(pr||ob) ? `<div class="note" style="margin-bottom:0;">Vor der Abgabe klären: ${pr?`${pr} Buchung(en) „prüfen"`:''}${pr&&ob?', ':''}${ob?`${ob} Buchung(en) ohne Beleg`:''}. <a class="link" href="#" data-action="goto-journal-problems">Anzeigen</a></div>` : `<div class="note blue" style="margin-bottom:0;">Alle Buchungen ${y} haben einen Beleg, nichts ist offen markiert.</div>`}
-      <div class="hint">Für Steuerberater:in oder Finanzamt: PDF (Übersicht + vollständiges Journal), dazu die CSV und den Drive-Ordner „Alle Rechnungen/${y}" mit den Belegen.</div>
+      ${(pr||ob) ? `<div class="note" style="margin-bottom:0;">Vor der Abgabe klären: ${pr?`${pr} Buchung(en) „prüfen"`:''}${pr&&ob?', ':''}${ob?`${ob} Buchung(en) ohne Beleg`:''}. <a class="link" href="#" data-action="goto-journal-problems">Anzeigen</a></div>` : ''}
+      
     </div>
     <div class="card report">
       <section>
@@ -1270,7 +1271,7 @@ function renderAbschluss(){
         <h3>5. Geldbestände</h3>
         <div class="tablewrap"><table><thead><tr><th>Konto</th><th class="num">01.01.</th><th class="num">Zugänge</th><th class="num">Abgänge</th><th class="num">31.12.</th></tr></thead>
         <tbody>${kontoRows}<tr class="total"><td>Summe</td><td class="num">${eur(sumStart)}</td><td></td><td></td><td class="num">${eur(sumEnde)}</td></tr></tbody></table></div>
-        <div class="hint">Probe: Bestand 01.01. + Überschuss + Einlagen − Entnahmen + Zunahme offener Auslagen = Bestand 31.12.</div>
+        
       </section>
       <section>
         <h3>6. Offene Auslagen zum 31.12. (Verbindlichkeiten gegenüber Mitgliedern)</h3>
@@ -1481,12 +1482,12 @@ function renderMieten(){
       <td>${isMember?`<input type="text" inputmode="decimal" class="amount" data-soll="${escAttr(m)}" value="${soll?amountInput(soll):''}" placeholder="0,00" style="width:84px; height:32px;">`:'<span class="hint">kein Mitglied</span>'}</td>
       ${cells}<td class="num"><b>${eur(round2(gezahlt+verrechnet))}</b></td><td class="num ${offen>0?'neg':''}">${offen?eur(offen):'—'}</td></tr>`;
   }).join('');
-  const colSum = zs.map(z=>`<td class="num">${(v=>v?amountInput(v).replace(/,00$/,''):'')(round2(inYear.filter(p=>p.z===z).reduce((s,p)=>s+p.r.betrag,0)))}</td>`).join('');
+  const colSum = zs.map(z=>`<td class="mcell-sum">${(v=>v?amountInput(v).replace(/,00$/,''):'')(round2(inYear.filter(p=>p.z===z).reduce((s,p)=>s+p.r.betrag,0)))}</td>`).join('');
   const mieteAus = zs.map(z=>`<td class="num">${(v=>v?amountInput(v).replace(/,00$/,''):'')(round2(active().filter(r=>r.typ==='Ausgabe' && r.kategorie==='Miete & Nebenkosten' && (r.datum||'').slice(0,7)===z).reduce((s,r)=>s+r.betrag,0)))}</td>`).join('');
   const sollSum = round2(persons.reduce((s,m)=>s+(state.memberSoll[m]||0),0));
   const geraten = pays.filter(p=>p.geraten && p.person);
   const ohne = pays.filter(p=>!p.person && p.z.slice(0,4)===y);
-  const head = zs.map((z,i)=>`<th class="num ${z===heute?'m-now':''}">${MONATE_KURZ[i]}</th>`).join('');
+  const head = zs.map((z,i)=>`<th class="mhead ${z===heute?'m-now':''}">${MONATE_KURZ[i]}</th>`).join('');
   return `
     ${geraten.length ? `<div class="note blue">${geraten.length} Mietzahlung${geraten.length>1?'en hat':' hat'} die App über Name und Monat in der Beschreibung zugeordnet.
       <button class="btn small" data-action="miete-zuordnung" style="margin-left:8px;">Zuordnung speichern</button></div>` : ''}
@@ -1500,16 +1501,14 @@ function renderMieten(){
       ${persons.length ? `<div class="tablewrap"><table class="mieten"><thead><tr><th>Person</th><th>Soll/Monat</th>${head}<th class="num">Summe</th><th class="num">Offen</th></tr></thead>
       <tbody>${rows}
         <tr class="total"><td>Eingang gesamt</td><td></td>${colSum}<td></td><td></td></tr>
-        ${state.vermerke.some(v=>v.zeitraum.slice(0,4)===y) ? `<tr class="sub"><td>ohne Zahlung erledigt<sup>*</sup></td><td></td>${zs.map(z=>`<td class="num">${(v=>v?amountInput(v).replace(/,00$/,''):'')(round2(state.vermerke.filter(v=>v.zeitraum===z).reduce((s,v)=>s+v.betrag,0)))}</td>`).join('')}<td></td><td></td></tr>` : ''}
-        <tr class="sub"><td>Miete & NK bezahlt</td><td></td>${mieteAus}<td></td><td></td></tr>
       </tbody></table></div>`
       : `<div class="empty">Noch keine Sollbeträge. Trag unten bei den Mitgliedern den monatlichen Mietanteil ein.</div>`}
-      <div class="hint">Feld anklicken, um einen Eingang zu buchen oder den Monat ohne Zahlung als erledigt zu markieren (<sup>*</sup>, z.B. verrechnet). „Offen" zählt ab der ersten Zahlung einer Person bis zum laufenden Monat. Mietanteile per Überweisung brauchen keinen hochgeladenen Beleg, das macht der Kontoauszug.</div>
+      
     </div>
     ${state.members.filter(m=>!(state.memberSoll[m]>0) && !persons.includes(m)).length ? `<div class="card"><h2>Mitglieder ohne Mietanteil</h2>
       <div class="row-form" style="margin-top:0;">${state.members.filter(m=>!(state.memberSoll[m]>0) && !persons.includes(m)).map(m=>`<div class="field"><label>${esc(m)}</label><input type="text" inputmode="decimal" class="amount" data-soll="${escAttr(m)}" placeholder="0,00" style="width:110px;"></div>`).join('')}
       <button class="btn ghost" data-action="soll-save">Speichern</button></div></div>` : ''}
-    ${ohne.length ? `<div class="card"><h2>Ohne Person</h2><div class="hint" style="margin-top:0;">Bei diesen Mietzahlungen findet die App keinen Namen. Über „Bearbeiten" die Person auswählen.</div>${journalTable(sortRows(ohne.map(p=>p.r), false))}</div>` : ''}`;
+    ${ohne.length ? `<div class="card"><h2>Ohne Person</h2>${journalTable(sortRows(ohne.map(p=>p.r), false))}</div>` : ''}`;
 }
 async function saveSoll(){
   const vals = {};
@@ -1540,7 +1539,7 @@ function mieteDialog(person, z){
       <div class="field" data-mz="vermerk" style="display:none;"><label>Wie erledigt</label><select id="mz-art"><option>verrechnet</option><option>anders bezahlt</option><option>erlassen</option></select></div>
       <div class="field" data-mz="vermerk" style="display:none; grid-column:span 2;"><label>Notiz *</label><input type="text" id="mz-notiz" placeholder="z.B. mit offenen Auslagen FRANCIS KARAT verrechnet"></div>
     </div>
-    <div class="hint" data-mz="vermerk" style="display:none;">Erscheint nur hier bei den Mieten, nicht als Kontobewegung und nicht in der EÜR.</div>`, async ()=>{
+    `, async ()=>{
     const betrag = round2(parseAmount(val('mz-betrag')));
     if(!(betrag>0)){ showToast('Betrag fehlt'); return false; }
     const mode = document.querySelector('#mz-mode .active').dataset.mode;
@@ -1743,7 +1742,7 @@ function renderSetupForm(){
         <div class="row-form"><button class="btn ghost" id="save-stamm">Stammdaten speichern</button></div>
 
         <h3 style="margin-top:26px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary);">Mitglieder</h3>
-        <div class="hint">Namen anpassen. Bereits gebuchte Einträge behalten den alten Namen als Text.</div>
+        
         ${memberRows}
         <div class="row-form">
           <div class="field" style="margin-bottom:0;"><label>Neues Mitglied</label><input type="text" id="new-member-name" style="min-width:180px;"></div>
