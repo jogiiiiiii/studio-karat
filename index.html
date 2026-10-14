@@ -65,7 +65,8 @@ h1{font-size:22px; font-weight:700; margin:0;}
 nav.tabs{display:flex; gap:22px; flex-wrap:wrap; max-width:100%;}
 nav.tabs button{font-family:var(--font); font-weight:600; font-size:14px; letter-spacing:.04em; text-transform:uppercase; background:transparent; border:none;
   padding:12px 0 11px; cursor:pointer; color:#fff; border-bottom:3px solid transparent; margin-bottom:-1px; transition:color .15s var(--ease);}
-nav.tabs button:hover{color:var(--hellrot);}
+@media (hover:hover){ nav.tabs button:hover{color:var(--hellrot);} nav.tabs button.active:hover{color:var(--rot);} }
+nav.tabs .t-short{display:none;}
 nav.tabs button.active{color:var(--rot); border-bottom-color:var(--rot);}
 .yearpick{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-secondary); font-weight:600; text-transform:uppercase; letter-spacing:.06em; padding:6px 0;}
 .yearpick select{height:34px; font-weight:700; width:auto;}
@@ -242,9 +243,10 @@ table.mieten td.mname, table.mieten thead th:first-child, table.mieten tr.total 
   .account-pill img{width:26px; height:26px;}
   .account-pill .btn.small{padding:5px 7px; font-size:10px; letter-spacing:.04em;}
   .navrow{flex-direction:column; align-items:stretch; gap:0; margin:0 -16px 16px; border-bottom:none;}
-  nav.tabs{flex-wrap:nowrap; overflow-x:auto; gap:20px; padding:0 16px; border-bottom:1px solid var(--divide-strong); scrollbar-width:none; -webkit-overflow-scrolling:touch;}
-  nav.tabs::-webkit-scrollbar{display:none;}
-  nav.tabs button{flex:0 0 auto; font-size:13px; padding:12px 0 10px;}
+  nav.tabs{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; width:100%; padding:0 16px; border-bottom:1px solid var(--divide-strong);}
+  nav.tabs button{font-size:11.5px; letter-spacing:.03em; padding:13px 2px 11px; margin:0; text-align:center; border-bottom:3px solid transparent; -webkit-tap-highlight-color:transparent; touch-action:manipulation; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  nav.tabs button.active{background:var(--blue-bg);}
+  nav.tabs .t-long{display:none;} nav.tabs .t-short{display:inline;}
   .yearpick{padding:10px 16px 0; justify-content:flex-end;}
   .yearpick select{height:32px;}
 
@@ -276,6 +278,8 @@ table.mieten td.mname, table.mieten thead th:first-child, table.mieten tr.total 
   #bf .row-form .btn{flex:1;}
 
   .tablewrap{margin:0; padding:0;}
+  [data-member-card] td.nr, [data-member-card] td.date{display:none;}
+  [data-member-card] td{padding:9px 4px;}
   table{font-size:13px;}
   th{font-size:10px; padding:8px 6px;}
   td{padding:9px 6px;}
@@ -398,7 +402,8 @@ const KAT_AUSGABE  = ['Miete & Nebenkosten','Material & Verbrauch','Getränke & 
 // Bewegungen, die Geld verschieben, aber kein Gewinn/Verlust sind:
 const KAT_NEUTRAL_EIN = ['Einlage Gesellschafter','Durchlaufender Posten'];
 const KAT_NEUTRAL_AUS = ['Entnahme Gesellschafter','Durchlaufender Posten'];
-const NEUTRAL = ['Einlage Gesellschafter','Entnahme Gesellschafter','Durchlaufender Posten','Erstattung Auslage','Umbuchung'];
+const KAT_UEBERTRAG = 'Schuldübertragung';  // jemand zahlt einem Mitglied dessen Auslage privat – die GbR schuldet es jetzt ihm
+const NEUTRAL = ['Einlage Gesellschafter','Entnahme Gesellschafter','Durchlaufender Posten','Erstattung Auslage','Umbuchung', KAT_UEBERTRAG];
 
 // ============ Auth (unverändert) ============
 let accessToken = null;
@@ -759,6 +764,7 @@ function active(){ return state.journal.filter(r=>!r.storniert); }
 function inYear(r, y){ y = y || ui.year; return y==='alle' || (r.datum||'').slice(0,4) === y; }
 function isEuer(r){ return r.typ!=='Umbuchung' && !NEUTRAL.includes(r.kategorie); }
 function isAuslage(r){ return r.konto==='Privat' && r.typ==='Ausgabe'; }
+function uebertragVon(r){ const first = byId((r.bezugId||'').split(',')[0]); return first ? first.bezahltVon : ''; }
 function isErstattung(r){ return r.kategorie==='Erstattung Auslage'; }
 // Wirkung einer Buchung auf ein Konto (+ Zugang / − Abgang)
 function effect(r, k){
@@ -838,6 +844,7 @@ function years(){
 function needsBeleg(r){ return !r.storniert && isEuer(r) && !r.belegUrl && !(r.typ==='Einnahme' && r.konto!=='Barkasse'); }
 function artOf(r){
   if(r.typ==='Umbuchung') return 'Umbuchung';
+  if(r.kategorie===KAT_UEBERTRAG) return 'Übertragung';
   if(isErstattung(r)) return 'Erstattung';
   if(isAuslage(r)) return 'Auslage';
   return r.typ;
@@ -851,7 +858,7 @@ const TABS = [
   {id:'konten', label:'Konten'},
   {id:'auslagen', label:'Auslagen'},
   {id:'mieten', label:'Mieten'},
-  {id:'abschluss', label:'Jahresabschluss'},
+  {id:'abschluss', label:'Jahresabschluss', short:'Abschluss'},
 ];
 
 function renderApp(){
@@ -886,9 +893,8 @@ const TICKER_WORDS = 'einnahmenausgabenumbuchungenauslagenerstattungenbelegekont
 function tickerHTML(){ return `<div class="ticker" aria-hidden="true"><span>${TICKER_WORDS.repeat(4)}</span></div>`; }
 function renderTabs(){
   const nav = document.getElementById('tabs');
-  nav.innerHTML = TABS.map(t=>`<button class="${ui.tab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
+  nav.innerHTML = TABS.map(t=>`<button type="button" class="${ui.tab===t.id?'active':''}" data-tab="${t.id}"><span class="t-long">${t.label}</span><span class="t-short">${t.short||t.label}</span></button>`).join('');
   nav.querySelectorAll('button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
-  const act = nav.querySelector('.active'); if(act && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = Math.max(0, act.offsetLeft - 16);
 }
 function switchTab(id){ ui.tab = id; ui.bf.editingId = null; renderTabs(); renderContent(); window.scrollTo(0,0); }
 
@@ -1080,7 +1086,7 @@ function journalTable(rows, opts){
   const body = rows.map(r=>{
     const art = artOf(r);
     const sign = r.typ==='Einnahme' ? 'pos' : (r.typ==='Ausgabe' ? 'neg' : '');
-    const kontoTxt = r.typ==='Umbuchung' ? `${accLabel(r.konto)} → ${accLabel(r.zielKonto)}` : (r.konto==='Privat' ? `<span class="badge person">${esc(r.bezahltVon)}</span>` : accLabel(r.konto));
+    const kontoTxt = r.typ==='Umbuchung' ? `${accLabel(r.konto)} → ${accLabel(r.zielKonto)}` : r.kategorie===KAT_UEBERTRAG ? `<span class="badge person">${esc(uebertragVon(r)||'?')} → ${esc(r.bezahltVon)}</span>` : (r.konto==='Privat' ? `<span class="badge person">${esc(r.bezahltVon)}</span>` : accLabel(r.konto));
     let status = '';
     if(r.storniert) status += `<span class="badge red" title="${escAttr(r.stornoGrund)}">storniert</span> `;
     if(!r.storniert && r.pruefen) status += `<span class="badge warn" title="${escAttr(r.hinweis)}">prüfen</span> `;
@@ -1088,7 +1094,7 @@ function journalTable(rows, opts){
     if(!r.storniert && isErstattung(r)) status += `<span class="badge grey">Erstattung</span> `;
     if(!r.storniert && !isEuer(r) && !isErstattung(r)) status += `<span class="badge grey">neutral</span> `;
     const beleg = r.belegUrl ? `<a class="link" href="${escAttr(r.belegUrl)}" target="_blank" rel="noopener">Beleg</a>` : (needsBeleg(r) ? '<span class="badge warn">Beleg fehlt</span>' : '<span class="dash">—</span>');
-    const canEdit = !r.storniert;
+    const canEdit = !r.storniert && r.kategorie!==KAT_UEBERTRAG;
     return `<tr class="${r.storniert?'storno':''} ${ui.bf.editingId===r.id?'editing':''}">
       <td class="nr">${esc(r.belegnr)}</td>
       <td class="date">${deDate(r.datum)}</td>
@@ -1097,7 +1103,7 @@ function journalTable(rows, opts){
       <td class="num amt ${sign}">${r.typ==='Ausgabe'?'−':''}${eur(r.betrag)}</td>
       <td class="st">${status}</td>
       <td class="bel">${beleg}</td>
-      <td class="actions">${canEdit?`<button class="btn ghost small" data-action="edit" data-id="${r.id}">Bearbeiten</button> <button class="btn danger small" data-action="storno" data-id="${r.id}">Storno</button>`:''}</td>
+      <td class="actions">${canEdit?`<button class="btn ghost small" data-action="edit" data-id="${r.id}">Bearbeiten</button>`:''}${!r.storniert?` <button class="btn danger small" data-action="storno" data-id="${r.id}">Storno</button>`:''}</td>
     </tr>`;
   }).join('');
   return `<div class="tablewrap"><table class="jt"><thead><tr><th>Nr.</th><th>Datum</th><th>Beschreibung</th><th>Konto</th><th class="num">Betrag</th><th>Status</th><th>Beleg</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`;
@@ -1129,7 +1135,7 @@ function renderJournal(){
       <div class="row-form" style="margin-top:0; margin-bottom:12px;">
         ${sel('f-konto', [['','alle Konten'], ...ACCOUNTS.map(a=>[a,accLabel(a)]), ['Privat','privat ausgelegt']], f.konto)}
         ${sel('f-projekt', [['','alle Projekte'],['-','allgemein'], ...state.projectOrder.map(id=>[id,state.projects[id].name])], f.projekt)}
-        ${sel('f-art', [['','alle Arten'],['Einnahme','Einnahmen'],['Ausgabe','Ausgaben'],['Auslage','Auslagen'],['Erstattung','Erstattungen'],['Umbuchung','Umbuchungen']], f.art)}
+        ${sel('f-art', [['','alle Arten'],['Einnahme','Einnahmen'],['Ausgabe','Ausgaben'],['Auslage','Auslagen'],['Erstattung','Erstattungen'],['Übertragung','Schuldübertragungen'],['Umbuchung','Umbuchungen']], f.art)}
         <input type="text" id="f-q" placeholder="Suchen…" value="${escAttr(f.q)}" style="width:170px;">
         <label class="check"><input type="checkbox" id="f-ohneBeleg" ${f.ohneBeleg?'checked':''}> ohne Beleg</label>
         <label class="check"><input type="checkbox" id="f-pruefen" ${f.pruefen?'checked':''}> zu prüfen</label>
@@ -1278,12 +1284,12 @@ function renderAuslagen(){
       <div class="tablewrap"><table><tbody>${list}</tbody></table></div>
       <div class="row-form">
         <div class="field"><label>Erstattet am</label><input type="date" data-erst-datum value="${today()}"></div>
-        <div class="field"><label>über</label><select data-erst-konto>${activeAccounts().map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}</select></div>
+        <div class="field"><label>über</label><select data-erst-konto>${activeAccounts().map(a=>`<option value="${a}">${accLabel(a)}</option>`).join('')}<option disabled>──────────</option>${state.members.filter(x=>x!==m).map(x=>`<option value="person:${escAttr(x)}">${esc(x)}</option>`).join('')}</select></div>
         <button class="btn" data-action="erstatten" data-member="${escAttr(m)}">Ausgewählte erstatten</button>
       </div>
     </div>`;
   }).join('');
-  const erst = sortRows(state.journal.filter(r=>isErstattung(r) && inYear(r)), false);
+  const erst = sortRows(state.journal.filter(r=>(isErstattung(r) || r.kategorie===KAT_UEBERTRAG) && inYear(r)), false);
   return `
     <div class="card">
       <h2>Auslagen der Mitglieder</h2>
@@ -1680,7 +1686,7 @@ async function stornoDialog(id){
     if(!grund){ showToast('Bitte einen Grund angeben'); return false; }
     await withBusy('Storniert…', async ()=>{
       const upd = [Object.assign({}, r, { storniert:true, stornoGrund:grund, geaendertAm:nowStamp(), geaendertVon:me() })];
-      if(isErstattung(r)){
+      if(isErstattung(r) || r.kategorie===KAT_UEBERTRAG){
         r.bezugId.split(',').map(s=>s.trim()).filter(Boolean).forEach(aid=>{ const a = byId(aid); if(a && a.erstattetDurch===r.id) upd.push(Object.assign({}, a, { erstattetDurch:'', geaendertAm:nowStamp(), geaendertVon:me() })); });
       }
       await updateRows('Journal', upd);
@@ -1696,7 +1702,9 @@ async function erstatten(member, btn){
   const ids = [...card.querySelectorAll('input[data-erst-m]:checked')].map(i=>i.value);
   if(!ids.length){ showToast('Nichts ausgewählt'); return; }
   const datum = card.querySelector('[data-erst-datum]').value || today();
-  const konto = card.querySelector('[data-erst-konto]').value;
+  const quelle = card.querySelector('[data-erst-konto]').value;
+  const person = quelle.startsWith('person:') ? quelle.slice(7) : '';
+  const konto = person ? 'Privat' : quelle;
   const items = ids.map(byId).filter(Boolean);
   const sum = round2(items.reduce((s,a)=>s+a.betrag,0));
   const projekte = [...new Set(items.map(a=>a.projektId))];
@@ -1705,14 +1713,15 @@ async function erstatten(member, btn){
     const fresh = ids.map(byId).filter(a=>a && auslageOffen(a) && !a.storniert);
     if(fresh.length !== ids.length) throw new Error('Inzwischen hat jemand etwas geändert – bitte neu laden.');
     const nr = nextBelegnummer();
-    const er = { id:uid(), belegnr:nr, datum, typ:'Ausgabe', betrag:sum, konto, zielKonto:'', kategorie:'Erstattung Auslage', projektId: projekte.length===1?projekte[0]:'',
-      beschreibung:`Erstattung an ${member}: ${fresh.map(a=>'#'+a.belegnr).join(', ')}`, bezahltVon:member, erstattetDurch:'', bezugId: ids.join(','), belegUrl:'', storniert:false, stornoGrund:'', pruefen:false, hinweis:'', erfasstAm:nowStamp(), erfasstVon:me(), geaendertAm:'', geaendertVon:'' };
+    const nrs = fresh.map(a=>'#'+a.belegnr).join(', ');
+    const er = { id:uid(), belegnr:nr, datum, typ:'Ausgabe', betrag:sum, konto, zielKonto:'', kategorie: person ? KAT_UEBERTRAG : 'Erstattung Auslage', projektId: projekte.length===1?projekte[0]:'',
+      beschreibung: person ? `Übertragen von ${member}: ${nrs}` : `Erstattung an ${member}: ${nrs}`, bezahltVon: person || member, erstattetDurch:'', bezugId: ids.join(','), belegUrl:'', storniert:false, stornoGrund:'', pruefen:false, hinweis:'', erfasstAm:nowStamp(), erfasstVon:me(), geaendertAm:'', geaendertVon:'' };
     await appendRows('Journal', [er]);
     await updateRows('Journal', fresh.map(a=>Object.assign({}, a, { erstattetDurch: er.id, geaendertAm:nowStamp(), geaendertVon:me() })));
-    await protokoll('Erstattung', er.id, null, er);
+    await protokoll(person ? 'Schuldübertragung' : 'Erstattung', er.id, null, er);
     await refresh();
   });
-  showToast(`${eur(sum)} an ${member} erstattet`);
+  showToast(person ? `${person} hat ${member} ${eur(sum)} gezahlt – die GbR schuldet jetzt ${person}` : `${eur(sum)} an ${member} erstattet`, 4000);
   renderContent();
 }
 
