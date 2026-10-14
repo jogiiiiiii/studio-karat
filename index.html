@@ -222,7 +222,7 @@ a.link{color:var(--hellrot); text-decoration:none; font-weight:500;} a.link:hove
 #busy-label{color:#fff !important; text-transform:uppercase; letter-spacing:.08em; font-weight:600 !important;}
 
 /* Bericht */
-.report h1{font-size:30px; font-weight:700; text-transform:uppercase; color:var(--rot); line-height:1.05; margin-bottom:8px;}
+.report h1{hyphens:manual; -webkit-hyphens:manual; overflow-wrap:break-word; font-size:30px; font-weight:700; text-transform:uppercase; color:var(--rot); line-height:1.05; margin-bottom:8px;}
 .report .meta{font-size:14px; color:var(--text-secondary); margin-bottom:6px;}
 .report .meta b{color:#fff;}
 .report table{font-size:13px;}
@@ -350,7 +350,7 @@ table.mieten td.mname, table.mieten thead th:first-child, table.mieten tr.total 
   .modal-bg{align-items:flex-end; padding:0;}
   .modal{max-width:none; padding:20px 16px calc(20px + env(safe-area-inset-bottom)); border-left:none; border-right:none; border-bottom:none;}
   .setup-card{margin:20px auto; padding:20px 16px;}
-  .report h1{font-size:22px;}
+  .report h1{font-size:20px;}
 }
 
 @media print{
@@ -1377,7 +1377,7 @@ function renderAbschluss(){
     </div>
     <div class="card report">
       <section>
-        <h1>Einnahmenüberschussrechnung ${y}</h1>
+        <h1>Einnahmen&shy;überschuss&shy;rechnung ${y}</h1>
         <div class="meta"><b>${esc(st.name||'STUDIO KARAT GbR')}</b> · ${esc(st.anschrift||'')}${st.steuernummer?' · St.-Nr. '+esc(st.steuernummer):''}</div>
         <div class="meta">Zeitraum ${deDate(from)} – ${deDate(`${y}-12-31`)}${st.umsatzsteuer?' · '+esc(st.umsatzsteuer):''}${ges.length?' · Gesellschafter: '+esc(ges.join(', ')):''}</div>
         <div class="meta print-only">Erstellt am ${deDate(today())} mit STUDIO KARAT Buchhaltung</div>
