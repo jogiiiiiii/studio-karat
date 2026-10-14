@@ -229,9 +229,36 @@ a.link{color:var(--hellrot); text-decoration:none; font-weight:500;} a.link:hove
 .report td{padding:7px 8px;} .report th{padding:7px 8px;}
 .print-only{display:none;}
 
+/* To-dos */
+.todo-add{display:flex; gap:8px;}
+.todo-add input{flex:1; min-width:0; height:48px; font-size:16px;}
+.todo-add .btn{height:48px; width:56px; padding:0; font-size:22px; line-height:1;}
+.todo-add-opts{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:8px;}
+.todo-add-opts select, .todo-add-opts input{height:36px; font-size:13.5px; padding:0 10px; padding-right:28px;}
+.todo-add-opts input[type=date]{padding-right:10px;}
+.todo-filter{display:flex; gap:8px; align-items:center;}
+.todo-filter select{height:32px; font-size:13px; width:auto;}
+.todo-list{display:flex; flex-direction:column;}
+.todo{display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-top:1px solid var(--divide);}
+.todo:first-child{border-top:none;}
+.todo-check{flex:0 0 26px; height:26px; margin-top:1px; border:2px solid var(--divide-strong); background:transparent; color:#fff; font-size:15px; font-weight:700; line-height:1; cursor:pointer; padding:0; -webkit-tap-highlight-color:transparent;}
+.todo-check:hover{border-color:var(--rot);}
+.todo.done .todo-check{background:var(--rot); border-color:var(--rot);}
+.todo-body{flex:1; min-width:0; cursor:pointer;}
+.todo-title{font-size:15.5px; line-height:1.35; overflow-wrap:anywhere;}
+.todo.done .todo-title{text-decoration:line-through; color:var(--text-secondary);}
+.todo-meta{display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:4px; font-size:12.5px; color:var(--text-secondary);}
+.todo-person{color:#fff;}
+.todo-date.over{color:var(--hellrot); font-weight:600;}
+.todo-date.today{color:var(--orange); font-weight:600;}
+.todo-proj{border:1px solid var(--divide-strong); padding:0 6px;}
+.todo-note{flex-basis:100%; color:var(--text-tertiary);}
+
 /* ===== Handy ===== */
 table.mieten td.mname, table.mieten thead th:first-child, table.mieten tr.total td:first-child{position:sticky; left:0; background:var(--petrol); z-index:1;}
 @media (max-width:640px){
+  .todo-filter{width:100%;} .todo-filter select{flex:1; min-width:0;}
+  .todo-add-opts select, .todo-add-opts input{font-size:14px;}
   .page{padding:0 16px calc(60px + env(safe-area-inset-bottom));}
   .ticker{font-size:13px; padding:9px 0; margin-bottom:14px;}
   header.top{margin-bottom:14px; align-items:center; gap:10px; flex-wrap:nowrap;}
@@ -374,6 +401,7 @@ const SHEET_DEFS = {
   Journal:    ['id','belegnr','datum','typ','betrag','konto','zielKonto','kategorie','projektId','beschreibung','bezahltVon','erstattetDurch','bezugId','belegUrl','storniert','stornoGrund','pruefen','hinweis','erfasstAm','erfasstVon','geaendertAm','geaendertVon','zeitraum'],
   Projekte:   ['id','name','kuerzel','traeger','budget','einnahmenBar','einnahmenShop'],
   Konten:     ['konto','anfang','tatsaechlich','anfangDatum','tatsaechlichDatum','bezeichnung','archiviert'],
+  Todos:      ['id','titel','notiz','person','faellig','projektId','erledigt','erledigtAm','erledigtVon','erstelltAm','erstelltVon'],
   Mietvermerke: ['id','person','zeitraum','betrag','art','notiz','storniert','erfasstAm','erfasstVon'],
   Mitglieder: ['name','mietanteil'],
   Stammdaten: ['schluessel','wert'],
@@ -738,11 +766,13 @@ function normJournal(r){
 
 async function refresh(){
   const legacyPresent = LEGACY_SHEETS.filter(n=>sheetIdCache[n] !== undefined);
-  const [journal, projekte, konten, mitglieder, stamm, vermerke, ...legacy] = await Promise.all([
-    readSheet('Journal'), readSheet('Projekte'), readSheet('Konten'), readSheet('Mitglieder'), readSheet('Stammdaten'), readSheet('Mietvermerke'),
+  const [journal, projekte, konten, mitglieder, stamm, vermerke, todos, ...legacy] = await Promise.all([
+    readSheet('Journal'), readSheet('Projekte'), readSheet('Konten'), readSheet('Mitglieder'), readSheet('Stammdaten'), readSheet('Mietvermerke'), readSheet('Todos'),
     ...legacyPresent.map(n=>readSheet(n)),
   ]);
   state.journal = journal.map(normJournal);
+  state.todos = (todos||[]).map(t=>Object.assign(t, { id:String(t.id), titel:String(t.titel||''), notiz:String(t.notiz||''), person:String(t.person||''), faellig: toISO(t.faellig), projektId:String(t.projektId||''), erledigt: truthy(t.erledigt), erledigtAm:String(t.erledigtAm||'') })).filter(t=>t.titel);
+  state.lastRefresh = Date.now();
   state.projects = {}; state.projectOrder = [];
   projekte.forEach(p=>{ p.id = String(p.id); p.budget = num(p.budget); state.projects[p.id] = p; state.projectOrder.push(p.id); });
   state.konten = konten.filter(k=>k.konto).map(k=>Object.assign(k, { konto: String(k.konto), anfang: num(k.anfang), tatsaechlich: num(k.tatsaechlich), anfangDatum: toISO(k.anfangDatum), tatsaechlichDatum: toISO(k.tatsaechlichDatum), bezeichnung: String(k.bezeichnung||''), archiviert: truthy(k.archiviert) }));
@@ -853,6 +883,7 @@ function artOf(r){
 // ============ Rendering ============
 const TABS = [
   {id:'uebersicht', label:'Übersicht'},
+  {id:'todos', label:'To-dos'},
   {id:'journal', label:'Buchungen'},
   {id:'projekte', label:'Projekte'},
   {id:'konten', label:'Konten'},
@@ -900,7 +931,7 @@ function switchTab(id){ ui.tab = id; ui.bf.editingId = null; renderTabs(); rende
 
 function renderContent(){
   const c = document.getElementById('content');
-  const views = { uebersicht:renderUebersicht, journal:renderJournal, projekte:renderProjekte, konten:renderKonten, auslagen:renderAuslagen, mieten:renderMieten, abschluss:renderAbschluss };
+  const views = { todos:renderTodos, uebersicht:renderUebersicht, journal:renderJournal, projekte:renderProjekte, konten:renderKonten, auslagen:renderAuslagen, mieten:renderMieten, abschluss:renderAbschluss };
   c.innerHTML = views[ui.tab]();
   afterRender();
 }
@@ -941,6 +972,7 @@ function renderUebersicht(){
     </div>
     ${(pr||ob) ? `<div class="note">${pr?`<b>${pr}</b> Buchung${pr>1?'en':''} ${pr>1?'sind':'ist'} als „prüfen" markiert. `:''}${ob?`<b>${ob}</b> Buchung${ob>1?'en haben':' hat'} noch keinen Beleg. `:''}
       <a class="link" href="#" data-action="goto-journal-problems">Anzeigen</a></div>` : ''}
+    ${todoTeaser()}
     <div class="card">
       <h2>Liquidität</h2>
       <div class="grid cols-4">${konten}
@@ -1177,6 +1209,10 @@ function renderProjekte(){
         <div class="kpi"><div class="label">Ausgaben</div><div class="value neg">${eur(s.a)}</div><div class="sub">${offen?`davon ${eur(offen)} noch nicht erstattet`:'alle Jahre'}</div></div>
         <div class="kpi"><div class="label">Ergebnis</div><div class="value ${s.d>=0?'pos':'neg'}">${eur(s.d)}</div></div>
         <div class="kpi"><div class="label">Budget übrig</div><div class="value ${p.budget-s.a>=0?'':'neg'}">${p.budget?eur(round2(p.budget-s.a)):'—'}</div><div class="sub">${p.budget?`von ${eur(p.budget)}`:'kein Budget eingetragen'}</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>To-dos ${esc(p.name)}</h2><button class="btn ghost small" data-action="todo-new" data-pid="${escAttr(p.id)}">+ To-do</button></div>
+        ${todoList(state.todos.filter(t=>t.projektId===p.id && !t.erledigt), { hideProject:true, empty:'Keine offenen To-dos.' })}
       </div>
       ${bookingForm({ projektId:p.id, title:`Buchung für ${p.name}` })}
       <div class="card">
@@ -1675,6 +1711,144 @@ async function saveZuordnung(){
   renderContent(); showToast(`${upd.length} Zahlungen zugeordnet`);
 }
 
+
+// ============ To-dos ============
+ui.todo = { person:'', projekt:'', zeigeErledigt:false };
+function todoDue(t){
+  if(!t.faellig || t.erledigt) return '';
+  const d = t.faellig, h = today();
+  if(d < h) return 'over';
+  if(d === h) return 'today';
+  return '';
+}
+function todoSort(a,b){
+  const fa = a.faellig || '9999', fb = b.faellig || '9999';
+  return fa.localeCompare(fb) || (a.erstelltAm||'').localeCompare(b.erstelltAm||'');
+}
+function todoList(list, opts){
+  opts = opts || {};
+  if(!list.length) return `<div class="empty">${opts.empty||'Nichts zu tun.'}</div>`;
+  return `<div class="todo-list">${list.slice().sort(todoSort).map(t=>{
+    const due = todoDue(t);
+    const meta = [
+      t.person ? `<span class="todo-person">${esc(t.person)}</span>` : '',
+      t.faellig ? `<span class="todo-date ${due}">${due==='today'?'heute':deDate(t.faellig)}</span>` : '',
+      (!opts.hideProject && t.projektId && state.projects[t.projektId]) ? `<span class="todo-proj">${esc(state.projects[t.projektId].name)}</span>` : '',
+      t.notiz ? `<span class="todo-note">${esc(t.notiz)}</span>` : '',
+    ].filter(Boolean).join('');
+    return `<div class="todo ${t.erledigt?'done':''}">
+      <button class="todo-check" data-action="todo-toggle" data-id="${escAttr(t.id)}" aria-label="${t.erledigt?'wieder öffnen':'erledigt'}">${t.erledigt?'✓':''}</button>
+      <div class="todo-body" data-action="todo-edit" data-id="${escAttr(t.id)}">
+        <div class="todo-title">${esc(t.titel)}</div>
+        ${meta?`<div class="todo-meta">${meta}</div>`:''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+function todoTeaser(){
+  const offen = (state.todos||[]).filter(t=>!t.erledigt);
+  if(!offen.length) return '';
+  const top = offen.slice().sort(todoSort).slice(0,4);
+  return `<div class="card">
+    <div class="card-head"><h2>To-dos · ${offen.length} offen</h2><button class="btn ghost small" data-action="goto-tab" data-tab="todos">Alle</button></div>
+    ${todoList(top)}
+  </div>`;
+}
+function renderTodos(){
+  const f = ui.todo;
+  let offen = state.todos.filter(t=>!t.erledigt);
+  let erledigt = state.todos.filter(t=>t.erledigt);
+  const filt = l => l.filter(t=>(!f.person || t.person===f.person) && (!f.projekt || (f.projekt==='-' ? !t.projektId : t.projektId===f.projekt)));
+  offen = filt(offen); erledigt = filt(erledigt).sort((a,b)=>(b.erledigtAm||'').localeCompare(a.erledigtAm||''));
+  const memberOpts = (sel, leer)=>`<option value="">${leer}</option>` + state.members.map(m=>`<option ${sel===m?'selected':''}>${esc(m)}</option>`).join('');
+  const projOpts = (sel, leer, mitOhne)=>`<option value="">${leer}</option>` + (mitOhne?`<option value="-" ${sel==='-'?'selected':''}>ohne Projekt</option>`:'') + state.projectOrder.map(id=>`<option value="${escAttr(id)}" ${sel===id?'selected':''}>${esc(state.projects[id].name)}</option>`).join('');
+  return `
+    <div class="card">
+      <form class="todo-add" id="todo-add" autocomplete="off">
+        <input type="text" id="td-titel" placeholder="Neues To-do …" maxlength="200">
+        <button class="btn" type="submit">+</button>
+      </form>
+      <div class="todo-add-opts">
+        <select id="td-person">${memberOpts('', 'wer?')}</select>
+        <input type="date" id="td-faellig" title="bis wann">
+        <select id="td-projekt">${projOpts('', 'Projekt?', false)}</select>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Offen · ${offen.length}</h2>
+        <div class="todo-filter">
+          <select id="tf-person">${memberOpts(f.person, 'alle')}</select>
+          <select id="tf-projekt">${projOpts(f.projekt, 'alle Projekte', true)}</select>
+          <button class="btn ghost small" data-action="todo-reload" title="Neu laden">↻</button>
+        </div>
+      </div>
+      ${todoList(offen, { empty: (f.person||f.projekt) ? 'Für diese Auswahl ist nichts offen.' : 'Alles erledigt.' })}
+    </div>
+    ${erledigt.length ? `<div class="card">
+      <div class="card-head"><h2>Erledigt · ${erledigt.length}</h2><button class="btn ghost small" data-action="todo-done-toggle">${f.zeigeErledigt?'ausblenden':'anzeigen'}</button></div>
+      ${f.zeigeErledigt ? todoList(erledigt.slice(0,50)) : ''}
+    </div>` : ''}`;
+}
+function bindTodos(){
+  const form = document.getElementById('todo-add');
+  if(form) form.onsubmit = async (ev)=>{
+    ev.preventDefault();
+    const titel = val('td-titel').trim();
+    if(!titel){ document.getElementById('td-titel').focus(); return; }
+    const t = { id:uid(), titel, notiz:'', person: val('td-person'), faellig: val('td-faellig'), projektId: val('td-projekt'), erledigt:false, erledigtAm:'', erledigtVon:'', erstelltAm: nowStamp(), erstelltVon: me() };
+    await withBusy('Speichert…', async ()=>{ await appendRows('Todos', [t]); await refresh(); });
+    renderContent();
+    const n = document.getElementById('td-titel'); if(n) n.focus();
+  };
+  const tp = document.getElementById('tf-person'); if(tp) tp.onchange = ()=>{ ui.todo.person = tp.value; renderContent(); };
+  const tj = document.getElementById('tf-projekt'); if(tj) tj.onchange = ()=>{ ui.todo.projekt = tj.value; renderContent(); };
+}
+async function todoToggle(id){
+  const t = state.todos.find(x=>x.id===id); if(!t) return;
+  const upd = Object.assign(clean(t), t.erledigt ? { erledigt:false, erledigtAm:'', erledigtVon:'' } : { erledigt:true, erledigtAm: nowStamp(), erledigtVon: me() });
+  // sofort zeigen, dann speichern
+  Object.assign(t, upd); renderContent();
+  try { await updateRows('Todos', [upd]); await refresh(); renderContent(); }
+  catch(e){ showToast('Fehler: '+(e.message||e), 5000); await refresh(); renderContent(); }
+}
+function todoDialog(id, presetProjekt){
+  const t = id ? state.todos.find(x=>x.id===id) : { titel:'', notiz:'', person:'', faellig:'', projektId: presetProjekt||'' };
+  if(!t) return;
+  modal(`<h2>${id?'To-do bearbeiten':'Neues To-do'}</h2>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr; margin-top:0;">
+      <div class="field" style="grid-column:1/-1;"><label>Was</label><input type="text" id="tdd-titel" value="${escAttr(t.titel)}" maxlength="200"></div>
+      <div class="field"><label>Wer</label><select id="tdd-person"><option value="">–</option>${state.members.map(m=>`<option ${t.person===m?'selected':''}>${esc(m)}</option>`).join('')}</select></div>
+      <div class="field"><label>Bis</label><input type="date" id="tdd-faellig" value="${escAttr(t.faellig||'')}"></div>
+      <div class="field" style="grid-column:1/-1;"><label>Projekt</label><select id="tdd-projekt"><option value="">– kein Projekt –</option>${state.projectOrder.map(pid=>`<option value="${escAttr(pid)}" ${t.projektId===pid?'selected':''}>${esc(state.projects[pid].name)}</option>`).join('')}</select></div>
+      <div class="field" style="grid-column:1/-1;"><label>Notiz</label><input type="text" id="tdd-notiz" value="${escAttr(t.notiz||'')}"></div>
+    </div>
+    ${id?`<div class="row-form" style="margin-top:6px;"><button class="btn danger small" data-action="todo-del" data-id="${escAttr(id)}">To-do löschen</button>${t.erledigt&&t.erledigtVon?`<span class="hint" style="margin:0;">erledigt von ${esc(t.erledigtVon)}</span>`:''}</div>`:''}`, async ()=>{
+    const titel = val('tdd-titel').trim();
+    if(!titel){ showToast('Was ist zu tun?'); return false; }
+    const fields = { titel, person: val('tdd-person'), faellig: val('tdd-faellig'), projektId: val('tdd-projekt'), notiz: val('tdd-notiz').trim() };
+    await withBusy('Speichert…', async ()=>{
+      if(id) await updateRows('Todos', [Object.assign(clean(t), fields)]);
+      else await appendRows('Todos', [Object.assign({ id:uid(), erledigt:false, erledigtAm:'', erledigtVon:'', erstelltAm: nowStamp(), erstelltVon: me() }, fields)]);
+      await refresh();
+    });
+    renderContent();
+  }, 'Speichern');
+  const f = document.getElementById('tdd-titel'); if(f && !id) f.focus();
+}
+async function todoDelete(id){
+  document.getElementById('modal-root').innerHTML = '';
+  await withBusy('Löscht…', async ()=>{ await deleteRowById('Todos', id); await refresh(); });
+  renderContent(); showToast('Gelöscht');
+}
+// Beim Zurückkehren in die App (Handy) frische Daten holen
+document.addEventListener('visibilitychange', async ()=>{
+  if(document.visibilityState !== 'visible' || !accessToken || !state.lastRefresh) return;
+  if(Date.now() - state.lastRefresh < 60000) return;
+  if(document.getElementById('modal-root').innerHTML || ui.bf.editingId) return;
+  if(!['todos','uebersicht','mieten','auslagen','konten'].includes(ui.tab)) return;
+  try { await refresh(); renderContent(); } catch(e){ console.error(e); }
+});
+
 // ============ Aktionen ============
 async function stornoDialog(id){
   const r = byId(id); if(!r) return;
@@ -1727,6 +1901,7 @@ async function erstatten(member, btn){
 
 function afterRender(){
   updateBookingForm();
+  bindTodos();
   document.querySelectorAll('#bf-art button').forEach(b=>b.onclick=()=>{ ui.bf.art = b.dataset.art; updateBookingForm(); });
   // Filter
   [['f-konto','konto'],['f-projekt','projekt'],['f-art','art']].forEach(([id,k])=>{ const el=document.getElementById(id); if(el) el.onchange=()=>{ ui.filter[k]=el.value; renderContent(); }; });
@@ -1765,6 +1940,12 @@ document.addEventListener('click', async (ev)=>{
     else if(a==='pick-konto'){ ui.konto = el.dataset.konto; renderContent(); }
     else if(a==='erstatten') await erstatten(el.dataset.member, el);
     else if(a==='csv') exportJournalCsv();
+    else if(a==='todo-toggle') await todoToggle(el.dataset.id);
+    else if(a==='todo-edit') todoDialog(el.dataset.id);
+    else if(a==='todo-new') todoDialog(null, el.dataset.pid);
+    else if(a==='todo-del') await todoDelete(el.dataset.id);
+    else if(a==='todo-done-toggle'){ ui.todo.zeigeErledigt = !ui.todo.zeigeErledigt; renderContent(); }
+    else if(a==='todo-reload'){ await withBusy('Lädt…', async ()=>{ await refresh(); }); renderContent(); }
     else if(a==='miete-buchen') mieteDialog(el.dataset.person, el.dataset.z);
     else if(a==='miete-zuordnung') await saveZuordnung();
     else if(a==='vermerk-del') await deleteVermerk(el.dataset.id);
