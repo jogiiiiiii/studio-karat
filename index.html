@@ -992,7 +992,9 @@ function renderUebersicht(){
 function bookingForm(opts){
   opts = opts || {};
   const editing = ui.bf.editingId ? byId(ui.bf.editingId) : null;
-  if(editing) ui.bf.art = artOf(editing);
+  if(editing && ui.bf.loadedId !== editing.id){ ui.bf.art = artOf(editing); ui.bf.origArt = ui.bf.art; ui.bf.loadedId = editing.id; }
+  if(!editing){ ui.bf.loadedId = null; ui.bf.origArt = null; }
+  const artWechsel = !editing || (['Einnahme','Ausgabe','Auslage','Umbuchung'].includes(artOf(editing)) && !(isAuslage(editing) && !auslageOffen(editing)));
   const art = ui.bf.art;
   const e = editing || {};
   const pid = editing ? e.projektId : (opts.projektId || '');
@@ -1001,7 +1003,7 @@ function bookingForm(opts){
   const members = allMembersWithAuslagen();
   return `<div class="card" id="bf">
     <div class="card-head"><h2>${editing?`Buchung #${esc(e.belegnr)} bearbeiten`:(opts.title||'Neue Buchung')}</h2>
-      ${editing?'':`<div class="seg" id="bf-art">${['Einnahme','Ausgabe','Auslage','Umbuchung'].map(a=>`<button type="button" data-art="${a}" class="${art===a?'active':''}">${a==='Auslage'?'Privat ausgelegt':a}</button>`).join('')}</div>`}
+      ${!artWechsel?'':`<div class="seg" id="bf-art">${['Einnahme','Ausgabe','Auslage','Umbuchung'].map(a=>`<button type="button" data-art="${a}" class="${art===a?'active':''}">${a==='Auslage'?'Privat ausgelegt':a}</button>`).join('')}</div>`}
     </div>
     <div class="form-grid">
       <div class="field"><label>Datum (Zahlung)</label><input type="date" id="bf-datum" value="${escAttr(e.datum||today())}"></div>
@@ -1044,7 +1046,7 @@ function updateBookingForm(){
     const cur = kat.value || kat.dataset.current;
     const list = art==='Einnahme' ? [...KAT_EINNAHME, '—', ...KAT_NEUTRAL_EIN] : [...KAT_AUSGABE, '—', ...(art==='Ausgabe'?KAT_NEUTRAL_AUS:[])];
     const opts = [`<option value="" ${!cur?'selected':''}>– Kategorie wählen –</option>`].concat(list.map(k=> k==='—' ? `<option disabled>── kein Gewinn/Verlust ──</option>` : `<option ${cur===k?'selected':''}>${esc(k)}</option>`));
-    if(cur && !list.includes(cur) && !NEUTRAL.includes(cur)) opts.splice(1, 0, `<option selected>${esc(cur)}</option>`);
+    if(cur && !list.includes(cur) && !NEUTRAL.includes(cur) && (!ui.bf.origArt || ui.bf.origArt===art)) opts.splice(1, 0, `<option selected>${esc(cur)}</option>`);
     kat.innerHTML = opts.join('');
   }
   const kl = document.getElementById('bf-konto-label'); if(kl) kl.textContent = art==='Einnahme' ? 'Eingang auf' : 'Bezahlt über';
@@ -1934,7 +1936,7 @@ document.addEventListener('click', async (ev)=>{
     else if(a==='migrate') await runMigration();
     else if(a==='bf-save') await saveBooking();
     else if(a==='bf-cancel'){ ui.bf.editingId = null; ui.bf.art='Ausgabe'; renderContent(); }
-    else if(a==='edit'){ ui.bf.editingId = el.dataset.id; renderContent(); const f=document.getElementById('bf'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'}); }
+    else if(a==='edit'){ ui.bf.editingId = el.dataset.id; ui.bf.loadedId = null; renderContent(); const f=document.getElementById('bf'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'}); }
     else if(a==='storno') await stornoDialog(el.dataset.id);
     else if(a==='pick-project'){ ui.projectId = el.dataset.pid; ui.bf.editingId = null; renderContent(); }
     else if(a==='pick-konto'){ ui.konto = el.dataset.konto; renderContent(); }
