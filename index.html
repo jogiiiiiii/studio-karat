@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="KARAT">
 <meta name="theme-color" content="#02303c">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,800;1,900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* Campton wie auf studio-karat.com. Liegen die Dateien im Repo unter fonts/, werden sie genutzt.
@@ -214,6 +215,7 @@ a.link{color:var(--hellrot); text-decoration:none; font-weight:500;} a.link:hove
 .gsi-btn:hover{background:#e8edf0;}
 .setup-card a{color:var(--text-secondary) !important;}
 
+.picker-dialog-bg{z-index:2500 !important;} .picker-dialog{z-index:2501 !important;}
 .modal-bg{position:fixed; inset:0; background:rgba(1,24,30,.72); z-index:1500; display:flex; align-items:center; justify-content:center; padding:16px;}
 .modal{background:var(--petrol); border:1px solid var(--divide-strong); padding:24px; width:100%; max-width:460px;}
 .modal h2{font-size:18px; margin:0 0 8px; text-transform:uppercase; color:var(--rot); font-weight:700;}
@@ -434,7 +436,13 @@ const KAT_NEUTRAL_AUS = ['Entnahme Gesellschafter','Durchlaufender Posten'];
 const KAT_UEBERTRAG = 'Schuldübertragung';  // jemand zahlt einem Mitglied dessen Auslage privat – die GbR schuldet es jetzt ihm
 const NEUTRAL = ['Einlage Gesellschafter','Entnahme Gesellschafter','Durchlaufender Posten','Erstattung Auslage','Umbuchung', KAT_UEBERTRAG];
 
-// ============ Auth (unverändert) ============
+// ============ Auth ============
+// Nur eingeschränkter Drive-Zugriff (drive.file): Die App sieht ausschließlich Dateien,
+// die sie selbst angelegt hat oder die man ihr einmalig über Googles Dateiauswahl freigibt.
+// Der restliche Drive bleibt für die App unsichtbar.
+const SCOPE_FILE = 'https://www.googleapis.com/auth/drive.file';
+const PICKER_KEY = 'AIzaSyC9iAHVpTjWpbiRlKD_AqbrbFuyx8qAR4o';
+const PICKER_APP_ID = '421068115023';
 let accessToken = null;
 let tokenClient = null;
 let userInfo = null;
@@ -442,9 +450,11 @@ let userInfo = null;
 function initGis(){
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CONFIG.clientId,
-    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+    scope: SCOPE_FILE + ' https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
     callback: async (resp) => {
       if(resp.error){ showToast('Anmeldung fehlgeschlagen: '+resp.error); return; }
+      const oa = google.accounts.oauth2;
+      if(oa.hasGrantedAllScopes && !oa.hasGrantedAllScopes(resp, SCOPE_FILE)){ accessToken = null; renderScopeMissing(); return; }
       accessToken = resp.access_token;
       try { userInfo = await apiFetch('https://www.googleapis.com/oauth2/v2/userinfo'); } catch(e){ userInfo = null; }
       await boot();
@@ -480,7 +490,7 @@ async function apiFetch(url, method, body){
     return apiFetch(url, method, body);
   }
   const json = await res.json().catch(()=>({}));
-  if(!res.ok) throw new Error((json.error && json.error.message) || ('Sheets API Fehler ('+res.status+')'));
+  if(!res.ok){ const e = new Error((json.error && json.error.message) || ('API-Fehler ('+res.status+')')); e.status = res.status; throw e; }
   return json;
 }
 
@@ -598,30 +608,11 @@ async function protokoll(aktion, id, vorher, nachher){
   } catch(e){ console.error('Protokoll fehlgeschlagen', e); }
 }
 
-// ============ Google Drive: Belege ablegen ============
-const DRIVE_FILES_API = 'https://www.googleapis.com/drive/v3/files';
-const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files';
-let folderCache = {};
-
-async function findOrCreateFolder(name, parentId){
-  const cacheKey = parentId + '/' + name;
-  if(folderCache[cacheKey]) return folderCache[cacheKey];
-  const safeName = name.replace(/'/g, "\\'");
-  const q = encodeURIComponent(`'${parentId}' in parents and name='${safeName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  const list = await apiFetch(`${DRIVE_FILES_API}?q=${q}&fields=files(id,name)`);
-  if(list.files && list.files.length){ folderCache[cacheKey] = list.files[0].id; return list.files[0].id; }
-  const created = await apiFetch(DRIVE_FILES_API, 'POST', { name, mimeType:'application/vnd.google-apps.folder', parents:[parentId] });
-  folderCache[cacheKey] = created.id;
-  return created.id;
-}
-async function resolveBelegFolder(typ, datumStr){
-  if(!CONFIG.financeFolderId) throw new Error('Kein Finanzen-Ordner eingestellt (Einstellungen).');
-  const year = /^\d{4}/.test(datumStr||'') ? datumStr.slice(0,4) : String(new Date().getFullYear());
-  const alleRechnungen = await findOrCreateFolder('Alle Rechnungen', CONFIG.financeFolderId);
-  const yearFolder = await findOrCreateFolder(year, alleRechnungen);
-  const subName = typ === 'Einnahme' ? 'Einnahmen' : (typ === 'Umbuchung' ? 'Umbuchungen' : 'Ausgaben');
-  return await findOrCreateFolder(subName, yearFolder);
-}
+// ============ Belege ablegen ============
+// Die App selbst hat keinen allgemeinen Drive-Zugriff. Belege gehen an einen kleinen Google-Apps-Script-Helfer,
+// der im Konto der Kasse läuft und die Datei in „Alle Rechnungen/<Jahr>/<Ausgaben|Einnahmen|Umbuchungen>“ ablegt –
+// genau wie bisher. Der Helfer prüft vorher, ob die anmeldende Person Bearbeitungsrechte an der Buchhaltungs-Tabelle hat.
+function belegScriptUrl(){ return (state.stamm && state.stamm.belegScript) || ''; }
 function sanitizeFilenamePart(s){
   return (s || '').toString().normalize('NFKD').replace(/[^\w\- ]/g,'').trim().replace(/\s+/g,'_').slice(0,40) || 'Beleg';
 }
@@ -632,31 +623,17 @@ function arrayBufferToBase64(buffer){
   for(let i=0; i<bytes.length; i+=chunkSize){ binary += String.fromCharCode.apply(null, bytes.subarray(i, i+chunkSize)); }
   return btoa(binary);
 }
-async function uploadBeleg(file, folderId, filename){
-  const metadata = { name: filename, parents:[folderId] };
-  const boundary = '-------karat' + uid();
-  const delim = `\r\n--${boundary}\r\n`;
-  const closeDelim = `\r\n--${boundary}--`;
-  const base64Data = arrayBufferToBase64(await file.arrayBuffer());
-  const body =
-    delim + 'Content-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(metadata) +
-    delim + `Content-Type: ${file.type || 'application/octet-stream'}\r\nContent-Transfer-Encoding: base64\r\n\r\n` + base64Data +
-    closeDelim;
-  const res = await fetch(`${DRIVE_UPLOAD_API}?uploadType=multipart&fields=id,webViewLink`, {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
-    body,
-  });
-  const json = await res.json().catch(()=>({}));
-  if(!res.ok) throw new Error((json.error && json.error.message) || 'Drive-Upload fehlgeschlagen');
-  return json;
-}
 async function storeBeleg(file, row, kuerzel){
-  const folderId = await resolveBelegFolder(row.typ, row.datum);
+  const url = belegScriptUrl();
+  if(!url) throw new Error('Beleg-Upload ist noch nicht eingerichtet (Einstellungen → Beleg-Upload).');
   const ext = (file.name.split('.').pop() || 'pdf').toLowerCase();
   const filename = `${row.datum}_${row.belegnr}_${kuerzel||'ALLG'}_${sanitizeFilenamePart(row.beschreibung)}.${ext}`;
-  const up = await uploadBeleg(file, folderId, filename);
-  return up.webViewLink || (up.id ? `https://drive.google.com/file/d/${up.id}/view` : '');
+  const payload = { token: accessToken, typ: row.typ, datum: row.datum, filename, mimeType: file.type || 'application/octet-stream', data: arrayBufferToBase64(await file.arrayBuffer()) };
+  // Ohne Content-Type-Header = „simple request“, damit Apps Script ohne CORS-Vorabfrage antwortet.
+  const res = await fetch(url, { method:'POST', body: JSON.stringify(payload), redirect:'follow' });
+  const json = await res.json().catch(()=>({ error:'Antwort des Beleg-Helfers nicht lesbar' }));
+  if(!res.ok || json.error) throw new Error('Beleg-Upload: ' + (json.error || ('Fehler '+res.status)));
+  return json.url || (json.id ? `https://drive.google.com/file/d/${json.id}/view` : '');
 }
 
 // ============ Hilfsfunktionen ============
@@ -724,7 +701,9 @@ function setBusy(isBusy, label){
 }
 async function withBusy(label, fn){
   setBusy(true, label);
-  const timeoutId = setTimeout(()=>{ setBusy(false); document.getElementById('hang-banner').style.display='flex'; }, 30000);
+  let timeoutId;
+  const arm = ()=> setTimeout(()=>{ if(window.__pickerOpen){ timeoutId = arm(); return; } setBusy(false); document.getElementById('hang-banner').style.display='flex'; }, 30000);
+  timeoutId = arm();
   try { const r = await fn(); clearTimeout(timeoutId); setBusy(false); return r; }
   catch(err){ clearTimeout(timeoutId); setBusy(false); console.error(err); showToast('Fehler: '+(err.message||err), 5000); throw err; }
 }
@@ -2014,6 +1993,81 @@ document.addEventListener('click', async (ev)=>{
   } catch(err){ console.error(err); }
 });
 
+// ============ Google-Dateiauswahl (Picker) ============
+function loadPicker(){
+  return new Promise((resolve, reject)=>{
+    let tries = 0;
+    (function wait(){
+      if(window.google && google.picker){ resolve(); return; }
+      if(window.gapi){ gapi.load('picker', { callback: resolve, onerror: ()=>reject(new Error('Dateiauswahl konnte nicht geladen werden')) }); return; }
+      if(++tries > 100){ reject(new Error('Dateiauswahl konnte nicht geladen werden')); return; }
+      setTimeout(wait, 100);
+    })();
+  });
+}
+// kind: 'sheet' | 'folder'. fileId: nur diese Datei anzeigen. parentId: in diesem Ordner starten.
+async function pickFromDrive(kind, fileId, parentId){
+  await loadPicker();
+  return new Promise(resolve=>{
+    const P = google.picker;
+    let view;
+    if(kind === 'sheet'){
+      view = new P.DocsView(P.ViewId.SPREADSHEETS).setIncludeFolders(true);
+    } else {
+      view = new P.DocsView(P.ViewId.FOLDERS).setIncludeFolders(true).setSelectFolderEnabled(true).setMimeTypes('application/vnd.google-apps.folder');
+    }
+    if(fileId && view.setFileIds) view.setFileIds(fileId);
+    else if(parentId && view.setParent) view.setParent(parentId);
+    const picker = new P.PickerBuilder()
+      .setOAuthToken(accessToken)
+      .setDeveloperKey(PICKER_KEY)
+      .setAppId(PICKER_APP_ID)
+      .setLocale('de')
+      .setTitle(kind === 'sheet' ? 'Buchhaltungs-Tabelle auswählen' : 'Belegordner auswählen')
+      .addView(view)
+      .enableFeature(P.Feature.SUPPORT_DRIVES)
+      .setCallback(data=>{
+        const action = data[P.Response.ACTION];
+        if(action === P.Action.PICKED){ resolve(data[P.Response.DOCUMENTS][0][P.Document.ID]); }
+        else if(action === P.Action.CANCEL){ resolve(null); }
+      })
+      .build();
+    picker.setVisible(true);
+  });
+}
+function renderScopeMissing(){
+  document.getElementById('page').innerHTML = `${tickerHTML()}
+    <div class="setup-card">
+      <h2>Zugriff fehlt</h2>
+      <p>Beim Anmelden wurde das Häkchen für Google Drive nicht gesetzt. Ohne das kann die App die Buchhaltungs-Tabelle nicht öffnen.</p>
+      <p>Die App bekommt damit <b>nur</b> Zugriff auf Dateien, die du ihr gleich selbst auswählst – die Buchhaltungs-Tabelle. Den Rest deines Drive sieht sie nicht.</p>
+      <button class="btn" id="scope-retry">Nochmal anmelden</button>
+    </div>`;
+  document.getElementById('scope-retry').onclick = ()=> signIn(true);
+}
+
+function renderGrantSheet(){
+  document.getElementById('page').innerHTML = `${tickerHTML()}
+    <div class="setup-card">
+      <h2>Tabelle freigeben</h2>
+      <p>Einmalig: Wähle im nächsten Fenster die Buchhaltungs-Tabelle aus. Danach darf die App genau diese Datei benutzen – sonst nichts in deinem Drive.</p>
+      <button class="btn" id="grant-sheet">Tabelle auswählen</button>
+      <p style="margin-top:14px;"><a href="#" id="grant-settings" style="color:var(--text-tertiary); font-size:12px;">Einstellungen</a></p>
+    </div>`;
+  document.getElementById('grant-sheet').onclick = async ()=>{
+    try {
+      const id = await pickFromDrive('sheet', CONFIG.spreadsheetId, '');
+      if(!id) return;
+      if(id !== CONFIG.spreadsheetId){
+        CONFIG.spreadsheetId = id;
+        try { localStorage.setItem('karat_config', JSON.stringify(CONFIG)); } catch(e){}
+      }
+      boot();
+    } catch(e){ showToast(e.message || String(e)); }
+  };
+  document.getElementById('grant-settings').onclick = (e)=>{ e.preventDefault(); renderSetupForm(); };
+}
+
 // ============ Setup- / Sign-in-Screens ============
 function renderSetupForm(){
   const cfg = CONFIG || {};
@@ -2029,8 +2083,8 @@ function renderSetupForm(){
       <h2>Einstellungen</h2>
       <p>Verbindungsdaten werden nur lokal in diesem Browser gespeichert, nicht irgendwo hochgeladen.</p>
       <div class="field"><label>OAuth Client-ID (aus Google Cloud Console)</label><input type="text" id="cfg-client" value="${escAttr(cfg.clientId||'')}" placeholder="123456789-abc...apps.googleusercontent.com"></div>
-      <div class="field"><label>Google Sheet ID (aus der Sheets-URL)</label><input type="text" id="cfg-sheet" value="${escAttr(cfg.spreadsheetId||'')}" placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz..."></div>
-      <div class="field"><label>Finanzen-Ordner-ID in Drive (für Belege)</label><input type="text" id="cfg-folder" value="${escAttr(cfg.financeFolderId||'')}" placeholder="1XyZ... (aus der Drive-Ordner-URL)"></div>
+      <div class="field"><label>Google Sheet ID (aus der Sheets-URL; leer lassen = beim Anmelden auswählen)</label><input type="text" id="cfg-sheet" value="${escAttr(cfg.spreadsheetId||'')}" placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz..."></div>
+      <div class="field"><label>Finanzen-Ordner-ID (nur zur Info, der Beleg-Helfer hat sie fest eingetragen)</label><input type="text" id="cfg-folder" value="${escAttr(cfg.financeFolderId||'')}" placeholder="1XyZ... (aus der Drive-Ordner-URL)"></div>
       <div class="row-form">
         <button class="btn" id="cfg-save">Speichern & verbinden</button>
         ${canGoBack ? '<button class="btn ghost" id="cfg-back">Zurück, ohne zu speichern</button>' : ''}
@@ -2043,6 +2097,10 @@ function renderSetupForm(){
         <div class="field"><label>Gesellschafter (mit Komma getrennt)</label><input type="text" id="st-gesellschafter" value="${escAttr(st.gesellschafter||'')}"></div>
         <div class="field"><label>Umsatzsteuer-Status</label><input type="text" id="st-umsatzsteuer" value="${escAttr(st.umsatzsteuer||'')}" placeholder="z.B. Kleinunternehmer nach § 19 UStG"></div>
         <div class="row-form"><button class="btn ghost" id="save-stamm">Stammdaten speichern</button></div>
+
+        <h3 style="margin-top:26px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary);">Beleg-Upload</h3>
+        <div class="field"><label>Adresse des Beleg-Helfers (Apps-Script-Web-App-URL, endet auf /exec)</label><input type="text" id="st-belegScript" value="${escAttr(st.belegScript||'')}" placeholder="https://script.google.com/macros/s/…/exec"></div>
+        <div class="row-form"><button class="btn ghost" id="save-belegscript">Speichern</button></div>
 
         <h3 style="margin-top:26px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary);">Mitglieder</h3>
         
@@ -2058,7 +2116,7 @@ function renderSetupForm(){
     const clientId = val('cfg-client').trim();
     const spreadsheetId = val('cfg-sheet').trim();
     const financeFolderId = val('cfg-folder').trim();
-    if(!clientId || !spreadsheetId){ showToast('Bitte Client-ID und Sheet-ID ausfüllen'); return; }
+    if(!clientId){ showToast('Bitte Client-ID ausfüllen'); return; }
     const changed = !CONFIG || CONFIG.clientId !== clientId;
     CONFIG = { clientId, spreadsheetId, financeFolderId };
     try { localStorage.setItem('karat_config', JSON.stringify(CONFIG)); } catch(e){}
@@ -2074,6 +2132,14 @@ function renderSetupForm(){
       Object.keys(state.stamm).filter(k=>!keys.includes(k)).forEach(k=>rows.push([k, state.stamm[k]]));
       await withBusy('Speichert…', async ()=>{ await clearAndWrite('Stammdaten', rows); await refresh(); });
       showToast('Gespeichert');
+    };
+    document.getElementById('save-belegscript').onclick = async ()=>{
+      const v = val('st-belegScript').trim();
+      if(v && !/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(v)){ showToast('Die Adresse muss mit https://script.google.com/macros/s/ beginnen und auf /exec enden', 5000); return; }
+      const rows = Object.keys(state.stamm).filter(k=>k!=='belegScript').map(k=>[k, state.stamm[k]]);
+      if(v) rows.push(['belegScript', v]);
+      await withBusy('Speichert…', async ()=>{ await clearAndWrite('Stammdaten', rows); await refresh(); });
+      showToast('Gespeichert'); renderSetupForm();
     };
     document.getElementById('add-member').onclick = async ()=>{
       const v = val('new-member-name').trim(); if(!v) return;
@@ -2122,6 +2188,9 @@ function renderSetupOrSignIn(){
 async function boot(){
   document.getElementById('page').innerHTML = '<div class="loading">Lade Daten…</div>';
   try{
+    if(!CONFIG.spreadsheetId){ renderGrantSheet(); return; }
+    try { await getSheetMeta(); }
+    catch(e){ if(e.status === 403 || e.status === 404){ renderGrantSheet(); return; } throw e; }
     await ensureSheets();
     await refresh();
     renderApp();
