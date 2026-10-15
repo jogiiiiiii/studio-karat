@@ -103,6 +103,7 @@ tr.storno td{opacity:.4;} tr.storno td.desc{text-decoration:line-through;}
 tr.editing td{background:var(--blue-bg);}
 tbody tr:hover td{background:rgba(255,255,255,.025);}
 th.num{text-align:right;}
+th.sortable{cursor:pointer; user-select:none;} th.sortable:hover{color:#fff;}
 .num{font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;}
 .num.pos{color:#fff;} .num.neg{color:var(--hellrot);}
 td.nr{font-family:'DM Mono',monospace; font-size:12.5px; color:var(--text-secondary); white-space:nowrap;}
@@ -748,10 +749,10 @@ function modal(html, onOk, okLabel, danger){
 let state = { projects:{}, projectOrder:[], journal:[], konten:[], members:[], stamm:{}, legacy:{ buchungen:[], vk:[], present:false } };
 let ui = {
   tab:'uebersicht', year: String(new Date().getFullYear()), projectId:null, konto:'Vereinskonto',
-  filter:{ konto:'', projekt:'', art:'', q:'', ohneBeleg:false, pruefen:false, storno:false },
+  filter:{ konto:'', projekt:'', art:'', q:'', ohneBeleg:false, pruefen:false, storno:false }, sort:'datum-desc',
   bf:{ art:'Ausgabe', editingId:null },
 };
-try { const y = localStorage.getItem('karat_year'); if(y) ui.year = y; } catch(e){}
+try { const y = localStorage.getItem('karat_year'); if(y) ui.year = y; const so = localStorage.getItem('karat_sort'); if(so) ui.sort = so; } catch(e){}
 
 function normJournal(r){
   r.betrag = round2(num(r.betrag));
@@ -1140,12 +1141,24 @@ function journalTable(rows, opts){
       <td class="actions">${canEdit?`<button class="btn ghost small" data-action="edit" data-id="${r.id}">Bearbeiten</button>`:''}${!r.storniert?` <button class="btn danger small" data-action="storno" data-id="${r.id}">Storno</button>`:''}</td>
     </tr>`;
   }).join('');
-  return `<div class="tablewrap"><table class="jt"><thead><tr><th>Nr.</th><th>Datum</th><th>Beschreibung</th><th>Konto</th><th class="num">Betrag</th><th>Status</th><th>Beleg</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="tablewrap"><table class="jt"><thead><tr>${opts.sortable ? `<th class="sortable" data-action="sort-col" data-col="nr">Nr.${ui.sort.startsWith('nr')?(ui.sort.endsWith('asc')?' ↑':' ↓'):''}</th><th class="sortable" data-action="sort-col" data-col="datum">Datum${ui.sort.startsWith('datum')?(ui.sort.endsWith('asc')?' ↑':' ↓'):''}</th>` : '<th>Nr.</th><th>Datum</th>'}<th>Beschreibung</th><th>Konto</th><th class="num">Betrag</th><th>Status</th><th>Beleg</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 function sortRows(rows, asc){
   return rows.slice().sort((a,b)=>{ const d = (a.datum||'').localeCompare(b.datum||''); if(d) return asc?d:-d; const n = (parseInt(a.belegnr)||0)-(parseInt(b.belegnr)||0); return asc?n:-n; });
 }
 
+const SORTS = [['datum-desc','Datum, neueste zuerst'],['datum-asc','Datum, älteste zuerst'],['nr-desc','Nr., höchste zuerst'],['nr-asc','Nr., niedrigste zuerst'],['betrag-desc','Betrag, größter zuerst']];
+function sortJournal(rows, mode){
+  const nr = r=>parseInt(r.belegnr,10)||0;
+  const by = {
+    'datum-desc': (a,b)=> (b.datum||'').localeCompare(a.datum||'') || nr(b)-nr(a),
+    'datum-asc':  (a,b)=> (a.datum||'').localeCompare(b.datum||'') || nr(a)-nr(b),
+    'nr-desc':    (a,b)=> nr(b)-nr(a),
+    'nr-asc':     (a,b)=> nr(a)-nr(b),
+    'betrag-desc':(a,b)=> b.betrag-a.betrag || nr(b)-nr(a),
+  }[mode] || ((a,b)=>0);
+  return rows.slice().sort(by);
+}
 function renderJournal(){
   const f = ui.filter;
   let rows = state.journal.filter(r=>inYear(r));
@@ -1156,7 +1169,7 @@ function renderJournal(){
   if(f.ohneBeleg) rows = rows.filter(needsBeleg);
   if(f.pruefen) rows = rows.filter(r=>r.pruefen && !r.storniert);
   if(f.q){ const q = f.q.toLowerCase(); rows = rows.filter(r=>[r.beschreibung,r.kategorie,r.belegnr,r.bezahltVon,projName(r.projektId),amountInput(r.betrag)].join(' ').toLowerCase().includes(q)); }
-  rows = sortRows(rows, false);
+  rows = sortJournal(rows, ui.sort);
   const sumE = round2(rows.filter(r=>!r.storniert && r.typ==='Einnahme').reduce((s,r)=>s+r.betrag,0));
   const sumA = round2(rows.filter(r=>!r.storniert && r.typ==='Ausgabe').reduce((s,r)=>s+r.betrag,0));
   const sel = (id, opts, cur)=>`<select id="${id}" data-filter style="width:auto;">${opts.map(([v,l])=>`<option value="${escAttr(v)}" ${cur===v?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
@@ -1170,12 +1183,13 @@ function renderJournal(){
         ${sel('f-konto', [['','alle Konten'], ...ACCOUNTS.map(a=>[a,accLabel(a)]), ['Privat','privat ausgelegt']], f.konto)}
         ${sel('f-projekt', [['','alle Projekte'],['-','allgemein'], ...state.projectOrder.map(id=>[id,state.projects[id].name])], f.projekt)}
         ${sel('f-art', [['','alle Arten'],['Einnahme','Einnahmen'],['Ausgabe','Ausgaben'],['Auslage','Auslagen'],['Erstattung','Erstattungen'],['Übertragung','Schuldübertragungen'],['Umbuchung','Umbuchungen']], f.art)}
+        <select id="f-sort" style="width:auto;" title="Sortierung">${SORTS.map(([v,l])=>`<option value="${v}" ${ui.sort===v?'selected':''}>${l}</option>`).join('')}</select>
         <input type="text" id="f-q" placeholder="Suchen…" value="${escAttr(f.q)}" style="width:170px;">
         <label class="check"><input type="checkbox" id="f-ohneBeleg" ${f.ohneBeleg?'checked':''}> ohne Beleg</label>
         <label class="check"><input type="checkbox" id="f-pruefen" ${f.pruefen?'checked':''}> zu prüfen</label>
         <label class="check"><input type="checkbox" id="f-storno" ${f.storno?'checked':''}> Stornos zeigen</label>
       </div>
-      ${journalTable(rows, { empty:'Keine Buchungen für diese Auswahl.' })}
+      ${journalTable(rows, { empty:'Keine Buchungen für diese Auswahl.', sortable:true })}
       
     </div>`;
 }
@@ -1906,6 +1920,7 @@ function afterRender(){
   bindTodos();
   document.querySelectorAll('#bf-art button').forEach(b=>b.onclick=()=>{ ui.bf.art = b.dataset.art; updateBookingForm(); });
   // Filter
+  const fs = document.getElementById('f-sort'); if(fs) fs.onchange = ()=>{ ui.sort = fs.value; try{ localStorage.setItem('karat_sort', ui.sort); }catch(_){} renderContent(); };
   [['f-konto','konto'],['f-projekt','projekt'],['f-art','art']].forEach(([id,k])=>{ const el=document.getElementById(id); if(el) el.onchange=()=>{ ui.filter[k]=el.value; renderContent(); }; });
   ['ohneBeleg','pruefen','storno'].forEach(k=>{ const el=document.getElementById('f-'+k); if(el) el.onchange=()=>{ ui.filter[k]=el.checked; renderContent(); }; });
   const q = document.getElementById('f-q');
@@ -1942,6 +1957,7 @@ document.addEventListener('click', async (ev)=>{
     else if(a==='pick-konto'){ ui.konto = el.dataset.konto; renderContent(); }
     else if(a==='erstatten') await erstatten(el.dataset.member, el);
     else if(a==='csv') exportJournalCsv();
+    else if(a==='sort-col'){ const c = el.dataset.col; ui.sort = ui.sort===c+'-desc' ? c+'-asc' : c+'-desc'; try{ localStorage.setItem('karat_sort', ui.sort); }catch(_){} renderContent(); }
     else if(a==='todo-toggle') await todoToggle(el.dataset.id);
     else if(a==='todo-edit') todoDialog(el.dataset.id);
     else if(a==='todo-new') todoDialog(null, el.dataset.pid);
