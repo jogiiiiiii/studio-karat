@@ -273,7 +273,7 @@ table.mieten td.mname, table.mieten thead th:first-child, table.mieten tr.total 
   .account-pill img{width:26px; height:26px;}
   .account-pill .btn.small{padding:5px 7px; font-size:10px; letter-spacing:.04em;}
   .navrow{flex-direction:column; align-items:stretch; gap:0; margin:0 -16px 16px; border-bottom:none;}
-  nav.tabs{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; width:100%; padding:0 16px; border-bottom:1px solid var(--divide-strong);}
+  nav.tabs{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0; width:100%; padding:0 16px; border-bottom:1px solid var(--divide-strong);}
   nav.tabs button{font-size:11.5px; letter-spacing:.03em; padding:13px 2px 11px; margin:0; text-align:center; border-bottom:3px solid transparent; -webkit-tap-highlight-color:transparent; touch-action:manipulation; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   nav.tabs button.active{background:var(--blue-bg);}
   nav.tabs .t-long{display:none;} nav.tabs .t-short{display:inline;}
@@ -356,7 +356,86 @@ table.mieten td.mname, table.mieten thead th:first-child, table.mieten tr.total 
   .report h1{font-size:20px;}
 }
 
+/* ============ Protokolle ============ */
+.sz-layout{display:grid; grid-template-columns:280px minmax(0,1fr); gap:20px; align-items:start;}
+@media(max-width:900px){ .sz-layout{grid-template-columns:1fr;} }
+.sz-list{border:1px solid var(--divide-strong); position:sticky; top:16px; max-height:calc(100vh - 32px); overflow:auto;}
+@media(max-width:900px){ .sz-list{position:static; max-height:250px;} }
+.sz-list .sz-search{padding:12px; border-bottom:1px solid var(--divide);}
+.sz-list .sz-search input{width:100%;}
+.sz-item{display:block; width:100%; text-align:left; background:transparent; border:none; border-bottom:1px solid var(--divide); color:var(--text); font-family:var(--font); padding:12px 14px; cursor:pointer;}
+.sz-item:last-child{border-bottom:none;}
+.sz-item .d{font-family:'DM Mono',monospace; font-size:12px; color:var(--text-secondary);}
+.sz-item .t{font-size:14px; font-weight:500; line-height:1.35; margin-top:2px;}
+.sz-item.active{background:var(--blue-bg);}
+.sz-item.active .d{color:var(--hellrot);}
+@media (hover:hover){ .sz-item:hover .t{color:var(--hellrot);} }
+
+.sz-doc{border:1px solid var(--divide-strong); padding:28px 32px 32px;}
+@media(max-width:640px){ .sz-doc{padding:18px 16px 22px;} }
+.sz-doc .kick{font-family:'DM Mono',monospace; font-size:12.5px; color:var(--text-secondary); letter-spacing:.02em;}
+.sz-doc h1{font-size:26px; line-height:1.15; font-weight:700; margin:6px 0 16px; text-transform:uppercase; letter-spacing:-.005em;}
+@media(max-width:640px){ .sz-doc h1{font-size:20px;} }
+.sz-meta{display:grid; grid-template-columns:auto 1fr; gap:4px 16px; font-size:13.5px; color:var(--text-secondary); margin-bottom:22px;}
+.sz-meta b{color:var(--text); font-weight:500;}
+.sz-tools{display:flex; gap:8px; flex-wrap:wrap; margin:-6px 0 22px;}
+
+.sz-summary{border:1px solid var(--rot); padding:16px 18px; margin-bottom:28px;}
+.sz-summary h3{font-size:12px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--rot); margin:0 0 8px;}
+.sz-summary h3:not(:first-child){margin-top:16px;}
+.sz-summary ul{margin:0; padding:0; list-style:none;}
+.sz-summary li{padding:4px 0; font-size:14px; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;}
+.sz-summary li > span:not(.ref):not(.mono):not(.sz-who){flex:1; min-width:0;}
+.sz-summary li .ref{font-family:'DM Mono',monospace; font-size:11.5px; color:var(--text-tertiary); min-width:30px;}
+
+.sz-top{padding-top:20px; margin-top:20px; border-top:1px solid var(--divide-strong);}
+.sz-top:first-of-type{border-top:none; margin-top:0;}
+.sz-top > h2{display:flex; gap:12px; align-items:baseline; font-size:15px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; margin:0 0 12px; color:#fff;}
+.sz-top > h2 .nr{font-family:'DM Mono',monospace; font-size:12.5px; color:var(--rot); font-weight:500; min-width:46px;}
+.sz-body{padding-left:58px;}
+@media(max-width:640px){ .sz-body{padding-left:0;} .sz-top > h2 .nr{min-width:0;} }
+.sz-body h4{font-size:12px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--text-secondary); margin:18px 0 6px;}
+.sz-body h4:first-child{margin-top:0;}
+.sz-p{margin:0 0 8px; font-size:14.5px; line-height:1.55;}
+.sz-p.klein{font-size:12.5px; color:var(--text-tertiary); font-style:italic;}
+.sz-p ul{margin:4px 0 0; padding-left:18px; color:var(--text-secondary);}
+.sz-p ul li{margin:2px 0;}
+.sz-p a, .sz-summary a{color:#fff; text-decoration:underline; text-decoration-color:var(--rot); text-underline-offset:3px;}
+.sz-hint{display:block; margin-top:6px; font-size:12.5px; color:var(--orange); border-left:2px solid var(--orange); padding-left:8px;}
+
+.sz-tag{margin:10px 0; padding:10px 12px; display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; font-size:14.5px; line-height:1.5;}
+.sz-tag .lab{font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:2px 7px; border:1px solid currentColor; white-space:nowrap;}
+.sz-tag .txt{flex:1; min-width:200px;}
+.sz-tag.beschluss{background:var(--blue-bg); border-left:3px solid var(--rot);}
+.sz-tag.beschluss .lab{color:var(--hellrot);}
+.sz-tag.aufgabe{background:var(--surface2); border-left:3px solid #fff;}
+.sz-tag.aufgabe .lab{color:#fff;}
+.sz-tag.aufgabe.done .txt{text-decoration:line-through; color:var(--text-tertiary);}
+.sz-tag.termin{border-left:3px solid var(--text-secondary); background:transparent; padding-left:12px;}
+.sz-tag.termin .lab{color:var(--text-secondary); font-family:'DM Mono',monospace; text-transform:none; letter-spacing:0; font-size:12px; font-weight:500;}
+.sz-tag.wichtig{background:var(--orange-bg); border-left:3px solid var(--orange);}
+.sz-tag.wichtig .lab{color:var(--orange);}
+.sz-who{font-size:12.5px; color:var(--text-secondary); white-space:nowrap;}
+.sz-who b{color:#fff; font-weight:600;}
+
+.sz-voices{margin:10px 0 12px; border-left:1px solid var(--divide-strong); padding-left:14px;}
+.sz-voices .cap{font-size:12px; color:var(--text-tertiary); margin-bottom:6px;}
+.sz-voice{display:grid; grid-template-columns:90px 1fr; gap:10px; padding:5px 0; font-size:14px; line-height:1.5;}
+.sz-voice .n{font-weight:600; color:#fff;}
+@media(max-width:520px){ .sz-voice{grid-template-columns:1fr; gap:0;} }
+.sz-tbl{margin:8px 0 14px;}
+.sz-tbl table td{font-size:13.5px; vertical-align:top;}
+.sz-tbl table td:first-child{white-space:nowrap; color:var(--text-secondary);}
+@media(max-width:520px){ .sz-tbl table td:first-child{white-space:normal;} }
+
 @media print{
+  .sz-list, .sz-tools{display:none !important;}
+  .sz-layout{display:block !important;}
+  .sz-doc{border:none; padding:0;}
+  .sz-top > h2{color:#111;}
+  .sz-voice .n, .sz-who b, .sz-p a{color:#111;}
+  .sz-tag{background:none !important;}
+  .sz-tag .lab, .sz-tag.aufgabe .lab{color:#111;}
   :root{ --bg:#fff; --text:#111; --text-secondary:#555; --text-tertiary:#888; --divide:#ddd; --divide-strong:#999; --surface2:#f4f4f4; }
   @page{size:A4; margin:14mm 12mm;}
   html, body{background:#fff !important; color:#111; font-size:11px;}
@@ -409,6 +488,8 @@ const SHEET_DEFS = {
   Mitglieder: ['name','mietanteil'],
   Stammdaten: ['schluessel','wert'],
   Protokoll:  ['zeit','nutzer','aktion','id','vorher','nachher'],
+  // Sitzungsprotokolle in bereinigter Form. Werden automatisch aus „_ Protokolle und Aufgaben“ übertragen.
+  Sitzungen:  ['id','datum','titel','beginn','ende','anwesend','protokollant','inhalt','quelleTab','aktualisiertAm','version'],
 };
 // Alte Tabs (bis Okt. 2026). Werden nur noch gelesen – für die einmalige Übernahme ins Journal.
 const LEGACY_SHEETS = ['Buchungen','Vereinskonto'];
@@ -730,6 +811,7 @@ let ui = {
   tab:'uebersicht', year: String(new Date().getFullYear()), projectId:null, konto:'Vereinskonto',
   filter:{ konto:'', projekt:'', art:'', q:'', ohneBeleg:false, pruefen:false, storno:false }, sort:'datum-desc',
   bf:{ art:'Ausgabe', editingId:null },
+  sitzung:null, sitzungQ:'',
 };
 try { const y = localStorage.getItem('karat_year'); if(y) ui.year = y; const so = localStorage.getItem('karat_sort'); if(so) ui.sort = so; } catch(e){}
 
@@ -746,12 +828,13 @@ function normJournal(r){
 
 async function refresh(){
   const legacyPresent = LEGACY_SHEETS.filter(n=>sheetIdCache[n] !== undefined);
-  const [journal, projekte, konten, mitglieder, stamm, vermerke, todos, ...legacy] = await Promise.all([
-    readSheet('Journal'), readSheet('Projekte'), readSheet('Konten'), readSheet('Mitglieder'), readSheet('Stammdaten'), readSheet('Mietvermerke'), readSheet('Todos'),
+  const [journal, projekte, konten, mitglieder, stamm, vermerke, todos, sitzungen, ...legacy] = await Promise.all([
+    readSheet('Journal'), readSheet('Projekte'), readSheet('Konten'), readSheet('Mitglieder'), readSheet('Stammdaten'), readSheet('Mietvermerke'), readSheet('Todos'), readSheet('Sitzungen').catch(()=>[]),
     ...legacyPresent.map(n=>readSheet(n)),
   ]);
   state.journal = journal.map(normJournal);
   state.todos = (todos||[]).map(t=>Object.assign(t, { id:String(t.id), titel:String(t.titel||''), notiz:String(t.notiz||''), person:String(t.person||''), faellig: toISO(t.faellig), projektId:String(t.projektId||''), erledigt: truthy(t.erledigt), erledigtAm:String(t.erledigtAm||'') })).filter(t=>t.titel);
+  state.sitzungen = (sitzungen||[]).map(normSitzung).filter(Boolean).sort((a,b)=>b.datum.localeCompare(a.datum));
   state.lastRefresh = Date.now();
   state.projects = {}; state.projectOrder = [];
   projekte.forEach(p=>{ p.id = String(p.id); p.budget = num(p.budget); state.projects[p.id] = p; state.projectOrder.push(p.id); });
@@ -864,6 +947,7 @@ function artOf(r){
 const TABS = [
   {id:'uebersicht', label:'Übersicht'},
   {id:'todos', label:'To-dos'},
+  {id:'protokolle', label:'Protokolle'},
   {id:'journal', label:'Buchungen'},
   {id:'projekte', label:'Projekte'},
   {id:'auslagen', label:'Auslagen'},
@@ -911,9 +995,108 @@ function switchTab(id){ ui.tab = id; ui.bf.editingId = null; renderTabs(); rende
 
 function renderContent(){
   const c = document.getElementById('content');
-  const views = { todos:renderTodos, uebersicht:renderUebersicht, journal:renderJournal, projekte:renderProjekte, konten:renderKonten, auslagen:renderAuslagen, mieten:renderMieten, abschluss:renderAbschluss };
+  const views = { protokolle:renderProtokolle, todos:renderTodos, uebersicht:renderUebersicht, journal:renderJournal, projekte:renderProjekte, konten:renderKonten, auslagen:renderAuslagen, mieten:renderMieten, abschluss:renderAbschluss };
   c.innerHTML = views[ui.tab]();
   afterRender();
+}
+
+// ============ Protokolle ============
+// Die bereinigten Fassungen liegen im Tab „Sitzungen“. Spalte „inhalt“ ist JSON:
+// { tops:[ { nr, titel, punkte:[ … ] } ] }
+// Punkt-Arten: {t} Text · {h} Zwischenüberschrift · {art:'beschluss'|'aufgabe'|'termin'|'wichtig', t, wer, bis, wann, erledigt}
+// {art:'stimmen', t, items:[{wer,t}]} · {art:'tabelle', kopf?, rows} · {link, t} · optional überall: sub[], hinweis, klein
+function normSitzung(r){
+  let inhalt = null;
+  try { inhalt = JSON.parse(String(r.inhalt||'')); } catch(e){ inhalt = null; }
+  if(!inhalt || !Array.isArray(inhalt.tops)) return null;
+  return {
+    id: String(r.id||''), datum: toISO(r.datum), titel: String(r.titel||''),
+    beginn: szZeit(r.beginn), ende: szZeit(r.ende),
+    anwesend: String(r.anwesend||''), protokollant: String(r.protokollant||''),
+    tops: inhalt.tops, aktualisiertAm: String(r.aktualisiertAm||''),
+  };
+}
+// Sheets macht aus „19:15“ gern eine Uhrzeit-Zahl (0,80…) – zurück in HH:MM
+function szZeit(v){ if(typeof v==='number' && v>=0 && v<1){ const m = Math.round(v*1440); return pad(Math.floor(m/60))+':'+pad(m%60); } return String(v??''); }
+function szWochentag(iso){ const d = new Date(iso+'T12:00:00'); return isNaN(d) ? '' : d.toLocaleDateString('de-DE',{weekday:'long'}); }
+function szLink(url, text){ return /^https?:\/\//.test(url||'') ? `<a href="${escAttr(url)}" target="_blank" rel="noopener">${esc(text||url)}</a>` : esc(text||''); }
+function szText(p){ return p.link && !p.art ? szLink(p.link, p.t) : esc(p.t||''); }
+function szSub(p){ return Array.isArray(p.sub) && p.sub.length ? `<ul>${p.sub.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>` : ''; }
+function szHint(p){ return p.hinweis ? `<span class="sz-hint">${esc(p.hinweis)}</span>` : ''; }
+function szWho(p){
+  const bits = [];
+  if(p.wer) bits.push(`<b>${esc(p.wer)}</b>`);
+  if(p.bis) bits.push('bis '+esc(p.bis));
+  return bits.length ? `<span class="sz-who">${bits.join(' · ')}</span>` : '';
+}
+const SZ_LABEL = { beschluss:'Beschluss', aufgabe:'Aufgabe', wichtig:'Wichtig' };
+function szPunkt(p){
+  if(p.h) return `<h4>${esc(p.h)}</h4>`;
+  if(p.art === 'tabelle'){
+    const rows = Array.isArray(p.rows) ? p.rows : [];
+    const head = Array.isArray(p.kopf) ? `<thead><tr>${p.kopf.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>` : '';
+    return `<div class="sz-tbl tablewrap"><table>${head}<tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+  if(p.art === 'stimmen'){
+    return `<div class="sz-voices">${p.t?`<div class="cap">${esc(p.t)}</div>`:''}${(p.items||[]).map(v=>`<div class="sz-voice"><span class="n">${esc(v.wer)}</span><span>${esc(v.t)}</span></div>`).join('')}</div>`;
+  }
+  if(p.art === 'termin'){
+    return `<div class="sz-tag termin"><span class="lab">${esc(p.wann||'Termin')}</span><span class="txt">${esc(p.t)}${szSub(p)}${szHint(p)}</span>${szWho(p)}</div>`;
+  }
+  if(SZ_LABEL[p.art]){
+    const txt = p.link ? szLink(p.link, p.t) : esc(p.t);
+    return `<div class="sz-tag ${p.art}${p.erledigt?' done':''}"><span class="lab">${SZ_LABEL[p.art]}${p.erledigt?' ✓':''}</span><span class="txt">${txt}${szSub(p)}${szHint(p)}</span>${szWho(p)}</div>`;
+  }
+  return `<div class="sz-p${p.klein?' klein':''}">${szText(p)}${szSub(p)}${szHint(p)}</div>`;
+}
+function szSummary(s){
+  const pick = art => s.tops.flatMap(t=>(t.punkte||[]).filter(p=>p.art===art).map(p=>Object.assign({ top:t.nr }, p)));
+  const bes = pick('beschluss'), auf = pick('aufgabe').filter(p=>!p.erledigt), ter = pick('termin'), hin = s.tops.flatMap(t=>(t.punkte||[]).filter(p=>p.hinweis).map(p=>({top:t.nr})));
+  if(!bes.length && !auf.length && !ter.length) return '';
+  const ref = n => `<span class="ref">${/^\d+$/.test(n)?'TOP '+esc(n):esc(n)}</span>`;
+  return `<div class="sz-summary">
+    ${bes.length?`<h3>Beschlüsse</h3><ul>${bes.map(p=>`<li>${ref(p.top)}<span>${esc(p.t)}</span></li>`).join('')}</ul>`:''}
+    ${auf.length?`<h3>Aufgaben · ${auf.length}</h3><ul>${auf.map(p=>`<li>${ref(p.top)}<span style="flex:1;min-width:180px">${esc(p.t)}</span>${szWho(p)}</li>`).join('')}</ul>`:''}
+    ${ter.length?`<h3>Termine</h3><ul>${ter.map(p=>`<li>${ref(p.top)}<span class="mono" style="font-size:12.5px">${esc(p.wann||'')}</span><span>${esc(p.t)}</span></li>`).join('')}</ul>`:''}
+    ${hin.length?`<h3 style="color:var(--orange)">Zu prüfen</h3><ul><li><span>${hin.length===1?'Eine Stelle ist':hin.length+' Stellen sind'} unklar und unten orange markiert.</span></li></ul>`:''}
+  </div>`;
+}
+function szMatches(s, q){
+  if(!q) return true;
+  q = q.toLowerCase();
+  return (s.titel+' '+s.anwesend+' '+deDate(s.datum)+' '+JSON.stringify(s.tops)).toLowerCase().includes(q);
+}
+function renderProtokolle(){
+  const all = state.sitzungen || [];
+  if(!all.length) return `<div class="card"><h2>Protokolle</h2><div class="empty">Noch keine Protokolle übertragen. Sie erscheinen hier, sobald sie aus „_ Protokolle und Aufgaben“ übernommen wurden.</div></div>`;
+  const list = all.filter(s=>szMatches(s, ui.sitzungQ));
+  let s = all.find(x=>x.id===ui.sitzung);
+  if(!s || !list.includes(s)) s = list[0] || all[0];
+  ui.sitzung = s.id;
+  const src = state.stamm && state.stamm.protokollSheetId ? `https://docs.google.com/spreadsheets/d/${encodeURIComponent(state.stamm.protokollSheetId)}/edit` : '';
+  const zeit = [s.beginn, s.ende].filter(Boolean).join(' – ');
+  return `<div class="sz-layout">
+    <aside class="sz-list">
+      <div class="sz-search"><input type="search" id="sitzung-q" placeholder="Suchen …" value="${escAttr(ui.sitzungQ)}" autocomplete="off"></div>
+      ${list.length ? list.map(x=>`<button type="button" class="sz-item ${x.id===s.id?'active':''}" data-action="sitzung-open" data-id="${escAttr(x.id)}"><div class="d">${esc(deDate(x.datum))}</div><div class="t">${esc(x.titel)}</div></button>`).join('') : '<div class="empty" style="padding:14px">Nichts gefunden.</div>'}
+    </aside>
+    <article class="sz-doc" id="sitzung-detail">
+      <div class="kick">Sitzung · ${esc(szWochentag(s.datum))}, ${esc(deDate(s.datum))}</div>
+      <h1>${esc(s.titel)}</h1>
+      <div class="sz-meta">
+        ${zeit?`<span>Zeit</span><b>${esc(zeit)}</b>`:''}
+        ${s.anwesend?`<span>Anwesend</span><b>${esc(s.anwesend)}</b>`:''}
+        ${s.protokollant?`<span>Protokoll</span><b>${esc(s.protokollant)}</b>`:''}
+      </div>
+      <div class="sz-tools">
+        <button class="btn ghost small" data-action="sitzung-print">Drucken / PDF</button>
+        ${src?`<button class="btn ghost small" data-action="sitzung-src" data-url="${escAttr(src)}">Original im Sheet</button>`:''}
+        <button class="btn ghost small" data-action="sitzung-reload" title="Neu laden">↻</button>
+      </div>
+      ${szSummary(s)}
+      ${s.tops.map(t=>`<section class="sz-top"><h2><span class="nr">${/^\d+$/.test(t.nr)?'TOP '+esc(t.nr):esc(t.nr)}</span><span>${esc(t.titel)}</span></h2><div class="sz-body">${(t.punkte||[]).map(szPunkt).join('')}</div></section>`).join('')}
+    </article>
+  </div>`;
 }
 
 function migrationCard(){
@@ -1897,6 +2080,8 @@ async function erstatten(member, btn){
 function afterRender(){
   updateBookingForm();
   bindTodos();
+  const sq = document.getElementById('sitzung-q');
+  if(sq) sq.oninput = ()=>{ ui.sitzungQ = sq.value; clearTimeout(afterRender._sq); afterRender._sq = setTimeout(()=>{ renderContent(); const n=document.getElementById('sitzung-q'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } }, 250); };
   document.querySelectorAll('#bf-art button').forEach(b=>b.onclick=()=>{ ui.bf.art = b.dataset.art; updateBookingForm(); });
   // Filter
   const fs = document.getElementById('f-sort'); if(fs) fs.onchange = ()=>{ ui.sort = fs.value; try{ localStorage.setItem('karat_sort', ui.sort); }catch(_){} renderContent(); };
@@ -1942,6 +2127,10 @@ document.addEventListener('click', async (ev)=>{
     else if(a==='todo-new') todoDialog(null, el.dataset.pid);
     else if(a==='todo-del') await todoDelete(el.dataset.id);
     else if(a==='todo-done-toggle'){ ui.todo.zeigeErledigt = !ui.todo.zeigeErledigt; renderContent(); }
+    else if(a==='sitzung-open'){ ui.sitzung = el.dataset.id; renderContent(); const d=document.getElementById('sitzung-detail'); if(d && window.innerWidth<900) d.scrollIntoView({behavior:'smooth', block:'start'}); }
+    else if(a==='sitzung-print'){ window.print(); }
+    else if(a==='sitzung-src'){ window.open(el.dataset.url, '_blank', 'noopener'); }
+    else if(a==='sitzung-reload'){ await withBusy('Lädt…', async ()=>{ await refresh(); }); renderContent(); }
     else if(a==='todo-reload'){ await withBusy('Lädt…', async ()=>{ await refresh(); }); renderContent(); }
     else if(a==='miete-buchen') mieteDialog(el.dataset.person, el.dataset.z);
     else if(a==='miete-zuordnung') await saveZuordnung();
