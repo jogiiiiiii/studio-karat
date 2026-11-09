@@ -1135,15 +1135,17 @@ function szMatches(s, q){
 }
 
 // ---------- Fristen (Übersicht) ----------
+// Steht derselbe Punkt in mehreren Protokollen (wird oft weiterkopiert), gilt das neueste:
+// Wer ihn dort von „Frist“ auf etwas anderes umstellt, nimmt ihn von der Übersicht.
 function szFristen(){
   const out = [], seen = new Set();
-  (state.sitzungen||[]).forEach(s=>s.tops.forEach(t=>(t.punkte||[]).forEach(p=>{
+  (state.sitzungen||[]).forEach(s=>s.tops.forEach(t=>(t.punkte||[]).forEach(p=>{   // sitzungen: neueste zuerst
+    const k = String(p.t||'').trim().toLowerCase().replace(/\s+/g,' ');
+    if(!k || seen.has(k)) return;
+    seen.add(k);
     if(p.art!=='frist') return;
     const d = toISO(p.datum||'');
     if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
-    const k = d+'|'+String(p.t||'').trim().toLowerCase();
-    if(seen.has(k)) return;   // gleiche Frist aus mehreren Protokollen nur einmal
-    seen.add(k);
     out.push({ datum:d, t:p.t, wer:p.wer||'', sitzung:s });
   })));
   return out.sort((a,b)=>a.datum.localeCompare(b.datum));
